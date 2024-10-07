@@ -1,0 +1,21 @@
+{
+	"id": "fda80da0-6064-427e-9cb8-64c93fb5039f",
+	"name": "Paywise Partner API",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "http://api.paywise.de",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "bearerToken",
+			"value": "<your-token-goes-here>",
+			"type": "secret",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2024-10-07T13:40:31.654Z",
+	"_postman_exported_using": "Postman/11.14.0"
+}

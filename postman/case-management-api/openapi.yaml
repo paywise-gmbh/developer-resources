@@ -1,0 +1,3984 @@
+openapi: 3.0.3
+info:
+  title: paywise Case Management API
+  version: v1
+  description: |2
+
+    Use our API to submit claims to our debt collection service, manage debtors and get status updates on running mandates.
+
+    ## Workflow
+    A typical workflow looks like this:
+
+
+
+    1. [Create a debtor][ref1]
+
+    2. [Create a claim][ref2] that is linked to the debtor
+
+    3. Optionally [upload documents to the claim][ref3]
+
+    4. [Release the claim for processing][ref4] by setting the claim's *submission_state* field to *released*
+
+    5. Wait for the claim to be accepted. When a claim is accepted, it is added to a [mandate][ref5] and the claim's *submission_state* is set to *accepted*.
+
+       To do so, periodically check the claim's *submission_state* and *mandate* fields.
+
+    6. Periodically [check the claim's status updates][ref6] to get informed about any progress in the claim collection process
+
+    7. [Report any (partial) payments][ref7] for a claim which you directly received from your debtor
+
+
+    [ref1]: #tag/debtors/operation/Create%20a%20debtor
+    [ref2]: #tag/claims/operation/Create%20a%20claim
+    [ref3]: #tag/claims/operation/Upload%20a%20document%20to%20a%20claim
+    [ref4]: #tag/claims/operation/Release%20claim%20for%20processing
+    [ref5]: #tag/mandates/operation/List%20all%20mandates
+    [ref6]: #tag/mandates/operation/List%20status%20updates
+    [ref7]: #tag/payments/operation/Create%20a%20payment
+
+    ## Authentication
+    Authenticate your account when using the API by including your secret API key in the request.
+
+    Include your secret API key in the request to authenticate.
+
+    * There are separate token types for **test** and **production** environments. Always start with test keys first.
+    * [Manage your API-Tokens here][ref7]
+    * Use <code>Authorization: Bearer YOUR_TOKEN</code> in your request header.
+
+    To test the connection, generate a test token and execute:
+
+        $ curl -X GET https://api.paywise.de/v1/claims/ -H 'Authorization: Bearer YOUR_TOKEN'
+
+
+    [ref7]: https://app.paywise.de/account/manage-api/manage-auth-tokens/
+paths:
+  /v1/claims/:
+    get:
+      operationId: list-claims
+      description: List your claims.
+      summary: List claims
+      parameters:
+      - in: query
+        name: claim_disputed
+        schema:
+          type: boolean
+        description: Filter by claim_disputed value of the claim
+      - in: query
+        name: delay_date
+        schema:
+          type: string
+          format: date
+        description: Filter by the delay_date of the claim
+      - in: query
+        name: document_reference
+        schema:
+          type: string
+        description: Filter by the document_reference of the claim
+      - in: query
+        name: due_date
+        schema:
+          type: string
+          format: date
+        description: Filter by the due_date of the claim
+      - in: query
+        name: id
+        schema:
+          type: string
+        description: Filter by our ID of the claim
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: obligation_fulfilled
+        schema:
+          type: boolean
+        description: Filter by the obligation_fulfilled value of the claim
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: reminder_date
+        schema:
+          type: string
+          format: date
+        description: Filter by the reminder_date of the claim
+      - in: query
+        name: starting_approach
+        schema:
+          type: string
+        description: Filter by the starting_approach of the claim
+      - in: query
+        name: subject_matter
+        schema:
+          type: string
+        description: Filter by the subject_matter of the claim
+      - in: query
+        name: submission_state
+        schema:
+          type: string
+        description: Filter by the submission_state of the claim
+      - in: query
+        name: your_reference
+        schema:
+          type: string
+        description: Filter by your_reference of the claim
+      tags:
+      - claims
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClaimList'
+              examples:
+                Example1:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?offset=400&limit=100
+                    previous: http://api.example.org/accounts/?offset=200&limit=100
+                    results:
+                    - href: http://api.paywise.de/v1/claims/f6e5bd1b-0c04-4e39-809c-a813db8f2614/
+                      id: f6e5bd1b-0c04-4e39-809c-a813db8f2614
+                      submission_state: accepted
+                      debtor: c33d083e-ed26-4996-877d-b9dc23416268
+                      mandate:
+                        href: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/
+                        id: 5600672e-2bfa-488c-b23a-460c1dd1f833
+                      your_reference: order-12-A-245-2022
+                      document_reference: RE-201900045
+                      subject_matter: Warenlieferung Playstation 7
+                      occurence_date: '2019-09-24'
+                      document_date: '2019-09-24'
+                      due_date: '2019-10-09'
+                      reminder_date: '2022-09-24'
+                      delay_date: '2022-09-24'
+                      total_claim_amount:
+                        value: '1202.50'
+                        currency: EUR
+                      main_claim_amount:
+                        value: '1200.00'
+                        currency: EUR
+                      items:
+                      - description: Playstation 7
+                        quantity: 1
+                        unit: pcs
+                        amount:
+                          value: '1200.00'
+                          currency: EUR
+                      additional_charges_amount:
+                        value: '2.50'
+                        currency: EUR
+                      additional_charges:
+                      - your_reference: string
+                        document_reference: MA-2022002
+                        subject_matter: Mahngebühren 1. Mahnung
+                        occurence_date: '2019-09-24'
+                        document_date: '2019-09-24'
+                        due_date: '2019-10-09'
+                        amount:
+                          value: '2.50'
+                          currency: EUR
+                        events:
+                        - title: Reminder delivered to debtor's address.
+                          occurence: '2019-09-24T06:34:43.206Z'
+                          your_reference: '123456789'
+                          description: The reminder was delivered to the debtor's
+                            home address via Deutsche Post AG. Based on information
+                            taken from tracking code DPAG-124-234543
+                          type: invoice
+                          location: Debtor home address
+                        - title: Sendout of reminder via postal service
+                          occurence: '2019-09-24T06:34:43.206Z'
+                          your_reference: '123456789'
+                          description: 'The reminder was sent via Deutsche Post AG.
+                            Tracking code: DPAG-124-234543'
+                          type: invoice
+                          location: Our office
+                      payments:
+                      - href: http://api.paywise.de/v1/payments/40dbe920-1d4e-4487-b29b-3a3f94870c50/
+                        id: 40dbe920-1d4e-4487-b29b-3a3f94870c50
+                        your_reference: MY-REF02
+                        amount:
+                          value: '105.00'
+                          currency: EUR
+                        value_date: '2019-08-24'
+                        metadata: []
+                        created: '2023-06-06T18:23:25.662254+02:00'
+                      - href: http://api.paywise.de/v1/payments/80df3dc5-30d9-41b6-9a45-5a5e57ab5a62/
+                        id: 80df3dc5-30d9-41b6-9a45-5a5e57ab5a62
+                        your_reference: MY-REF01
+                        amount:
+                          value: '90.23'
+                          currency: EUR
+                        value_date: '2019-08-24'
+                        metadata: []
+                        created: '2023-06-06T18:24:18.685178+02:00'
+                      starting_approach: extrajudicial
+                      claim_disputed: false
+                      obligation_fulfilled: true
+                      documents:
+                      - id: af876232-a19f-44f2-8da9-f32c427cd18e
+                        mime_type: application/pdf
+                        filename: RE244523.pdf
+                      metadata:
+                      - type: invoice:reference
+                        value: RE-202200045
+                      - type: comment
+                        value: Der Schuldner hat auf keine unserer Kontaktanfragen
+                          reagiert.
+                      events:
+                      - title: Delivery of goods
+                        occurence: '2019-09-03T14:15:22Z'
+                        your_reference: string
+                        description: Goods were delivered at debtors address. Based
+                          on information from DHL tracking code DHL-123-3421.
+                        type: delivery
+                        location: Debtor home address
+                      created: '2019-10-05T17:55:05Z'
+                      updated: '2019-10-06T09:12:22Z'
+                  summary: Example 1
+          description: ''
+    post:
+      operationId: create-claim
+      summary: Create a claim
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClaimSerializerWithoutIdRequest'
+            examples:
+              Example1:
+                value:
+                  debtor: 5352c781-9ed1-45cc-bd15-9ec342435ae2
+                  your_reference: order-12-A-245-2022
+                  document_reference: RE-202200045
+                  subject_matter: Warenlieferung Playstation 7
+                  occurence_date: '2022-09-01'
+                  document_date: '2022-09-01'
+                  due_date: '2022-09-19'
+                  reminder_date: '2022-09-24'
+                  delay_date: '2022-09-24'
+                  total_claim_amount:
+                    value: '1202.50'
+                    currency: EUR
+                  main_claim_amount:
+                    value: '1200.00'
+                    currency: EUR
+                  items:
+                  - description: Playstation 7
+                    quantity: 1
+                    unit: pcs
+                    amount:
+                      value: '1200.00'
+                      currency: EUR
+                  additional_charges_amount:
+                    value: '2.50'
+                    currency: EUR
+                  additional_charges:
+                  - your_reference: string
+                    document_reference: MA-2022002
+                    subject_matter: Mahngebühren 1. Mahnung
+                    occurence_date: '2022-09-24'
+                    document_date: '2022-09-24'
+                    due_date: '2022-10-09'
+                    amount:
+                      value: '2.50'
+                      currency: EUR
+                    events:
+                    - title: Reminder delivered to debtor's address.
+                      occurence: '2019-09-24T06:34:43.206Z'
+                      your_reference: '123456789'
+                      description: The reminder was delivered to the debtor's home
+                        address via Deutsche Post AG. Based on information taken from
+                        tracking code DPAG-124-234543
+                      type: invoice
+                      location: Debtor home address
+                    - title: Sendout of reminder via postal service
+                      occurence: '2019-09-24T06:34:43.206Z'
+                      your_reference: '123456789'
+                      description: 'The reminder was sent via Deutsche Post AG. Tracking
+                        code: DPAG-124-234543'
+                      type: invoice
+                      location: Our office
+                  payments:
+                  - your_reference: MY-REF02
+                    amount:
+                      value: '105.00'
+                      currency: EUR
+                    value_date: '2023-05-24'
+                    metadata:
+                    - type: invoice:reference
+                      value: RE-202200045
+                  - your_reference: MY-REF01
+                    amount:
+                      value: '90.23'
+                      currency: EUR
+                    value_date: '2023-05-23'
+                    metadata:
+                    - type: invoice:reference
+                      value: RE-202200045
+                  starting_approach: extrajudicial
+                  claim_disputed: false
+                  obligation_fulfilled: true
+                  metadata:
+                  - type: invoice:reference
+                    value: RE-202200045
+                  - type: comment
+                    value: Der Schuldner hat auf keine unserer Kontaktanfragen reagiert.
+                  events:
+                  - title: Delivery of goods
+                    occurence: '2022-09-03T14:15:22Z'
+                    your_reference: string
+                    description: Goods were delivered at debtors address. Based on
+                      information from DHL tracking code DHL-123-3421.
+                    type: delivery
+                    location: Debtor home address
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClaimSerializerWithoutIdRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClaimSerializerWithoutIdRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /v1/claims/{id}/:
+    get:
+      operationId: get-claim
+      description: Retrieve a single claim.
+      summary: Retrieve a claim
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - claims
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+    patch:
+      operationId: release-claim
+      description: Releases a claim for processing by paywise. To do so, set the claim's
+        *submission_state* field to *released*. After release, a claim cannot be changed
+        anymore. To make changes to an already released claim, please contact our
+        support.
+      summary: Release claim for processing
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReleaseClaimForProcessingRequest'
+            examples:
+              Example1:
+                value:
+                  submission_state: released
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReleaseClaimForProcessingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReleaseClaimForProcessingRequest'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /v1/claims/{id}/documents/:
+    post:
+      operationId: upload-claim-document
+      description: Upload a document to a claim. Accepted filetypes are PDF, JPEG
+        and PNG.
+      summary: Upload a document to a claim
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - claims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadedDocumentFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UploadedDocumentFileUploadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadedDocumentFileUploadRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Claim'
+          description: ''
+  /v1/debtors/:
+    get:
+      operationId: list-debtors
+      description: List your debtors.
+      summary: List debtors
+      parameters:
+      - in: query
+        name: acting_as
+        schema:
+          type: string
+        description: Filter by acting_as value of the debtor
+      - in: query
+        name: id
+        schema:
+          type: string
+        description: Filter by our ID of the debtor
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: your_reference
+        schema:
+          type: string
+        description: Filter by your_reference for the debtor
+      tags:
+      - debtors
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDebtorList'
+          description: ''
+    post:
+      operationId: create-debtor
+      summary: Create a debtor
+      tags:
+      - debtors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebtorSerializerWithoutIdRequest'
+            examples:
+              Example1:
+                value:
+                  your_reference: MEMBER-ID-1413
+                  person:
+                    salutation: Herr
+                    first_name: Max
+                    last_name: Mustermann
+                    birth_date: '1986-08-24'
+                  acting_as: consumer
+                  addresses:
+                  - street: Am Beispielbach 4
+                    zip: '80804'
+                    city: München
+                    country: DE
+                  communication_channels:
+                  - type: email
+                    value: max@mustermann.de
+                  bank_accounts:
+                  - iban: DE53500105178977267179
+                    bic: BYLADEM1001
+                  metadata:
+                  - type: user:reference
+                    value: string
+                  events:
+                  - type: registration
+                    title: string
+                    occurence: '2019-08-24T14:15:22Z'
+                    your_reference: string
+                    description: string
+                    location: string
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DebtorSerializerWithoutIdRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DebtorSerializerWithoutIdRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debtor'
+          description: ''
+  /v1/debtors/{id}/:
+    get:
+      operationId: get-debtor
+      description: Retrieve a single debtor.
+      summary: Retrieve a debtor
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - debtors
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debtor'
+          description: ''
+  /v1/debtors/{id}/addresses/:
+    post:
+      operationId: add-debtor-address
+      description: Add an address to an existing debtor.
+      summary: Add address to a debtor
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - debtors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debtor'
+          description: ''
+  /v1/debtors/{id}/bankaccounts/:
+    post:
+      operationId: add-debtor-bank-account
+      description: Add a bank account to an existing debtor.
+      summary: Add bank account to a debtor
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - debtors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankAccountRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BankAccountRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BankAccountRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debtor'
+          description: ''
+  /v1/debtors/{id}/communicationchannels/:
+    post:
+      operationId: add-debtor-communication-channel
+      description: Add a communication channel to an existing debtor.
+      summary: Add debtor Communication Channel
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - debtors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommunicationChannelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommunicationChannelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommunicationChannelRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Debtor'
+          description: ''
+  /v1/mandates/:
+    get:
+      operationId: list-mandates
+      description: List and filter your mandates
+      summary: List mandates
+      parameters:
+      - in: query
+        name: archived
+        schema:
+          type: boolean
+        description: Filter by archived status of the mandate
+      - in: query
+        name: debtor
+        schema:
+          type: string
+          format: uuid
+        description: Filter by our ID of the debtor
+      - in: query
+        name: debtor_organization_name
+        schema:
+          type: string
+        description: Filter by the name of the debtor's organization (in case debtor
+          is an organization and has the 'organization' object associated with it)
+      - in: query
+        name: debtor_person_first_name
+        schema:
+          type: string
+        description: Filter by the first name of the debtor (in case debtor is a person
+          has the 'person' object associated with it). Can be combined with debtor_person_last_name
+      - in: query
+        name: debtor_person_last_name
+        schema:
+          type: string
+        description: Filter by the last name of the debtor (in case debtor is a person
+          and has the 'person' object associated with it). Can be combined with debtor_person_first_name
+      - in: query
+        name: debtor_your_reference
+        schema:
+          type: string
+        description: Filter by the field your_reference of the mandate's debtor
+      - in: query
+        name: legal_stage
+        schema:
+          type: string
+        description: Filter by the legal stage of the mandate
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: payment_state
+        schema:
+          type: string
+        description: Filter by the payment state of the mandate
+      - in: query
+        name: processing_state
+        schema:
+          type: string
+        description: Filter by the processing state of the mandate
+      - in: query
+        name: reference_number
+        schema:
+          type: string
+        description: Filter by the reference number of the mandate
+      tags:
+      - mandates
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMandateList'
+          description: ''
+  /v1/mandates/{id}/:
+    get:
+      operationId: get-mandate
+      description: Retrieve a single mandate
+      summary: Retrieve a mandate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - mandates
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mandate'
+          description: ''
+    patch:
+      operationId: archive-mandate
+      description: |-
+        Set mandate's archived status by modifying it's field **archived**.
+
+        Mandates that are archived, are displayed under their own category in the mandates list view in the webinterface.
+
+        Changing this property does not affect any business logic on our side. This means, that archiving a running mandate will not stop us from further processing it. Unarchiving on the other hand will not re-activate a closed mandate.
+      summary: Archive a mandate
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - mandates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMandateArchiveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMandateArchiveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMandateArchiveRequest'
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mandate'
+          description: ''
+  /v1/mandates/{id}/statusupdates/:
+    get:
+      operationId: list-mandate-status
+      description: Lists all status updates of a mandate.
+      summary: List status updates
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - mandates
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusUpdates'
+          description: ''
+  /v1/payments/:
+    get:
+      operationId: list-payments
+      description: List your reported payments.
+      summary: List payments
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPaymentList'
+          description: ''
+    post:
+      operationId: create-payment
+      description: Report a payment to a claim that you received from your debtor.
+        Payments can be reported at anytime - **before or after** releasing a claim
+        for processing and at any state of us processing a claim or mandate.
+      summary: Create a payment
+      tags:
+      - payments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentSerializerWithoutIdRequest'
+            examples:
+              Example1:
+                value:
+                  claim: 7e60fd1d-575d-4043-a73d-5a2fe9049027
+                  your_reference: eeba-3465-2debe
+                  amount:
+                    value: '149.00'
+                    currency: EUR
+                  value_date: '2019-08-24'
+                  metadata:
+                  - type: invoice:reference
+                    value: R23/328452398
+                summary: Example 1
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentSerializerWithoutIdRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentSerializerWithoutIdRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+  /v1/payments/{id}/:
+    get:
+      operationId: get-payment
+      description: Retrieve a single payment which you reported.
+      summary: Retrieve a payment
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - payments
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: ''
+components:
+  schemas:
+    ActingAsEnum:
+      enum:
+      - consumer
+      - business
+      type: string
+      description: |-
+        * `consumer` - Verbraucher
+        * `business` - Unternehmer
+    AdditionalCharge:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          oneOf:
+          - $ref: '#/components/schemas/AdditionalChargeTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        subject_matter:
+          type: string
+          nullable: true
+          description: A description of the incidental claim. For example "Mahngebühren
+            1. Mahnung".
+        occurence_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date the charge was initiated. For example the date of
+            the reminder (reminder fee) or a chargeback fee's value date.
+        document_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date of the document the charge was initiated with ("Belegdatum").
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date your additional charge was due for payment. Applicaple
+            mainly for payment reminders. Leave empty if no due date exists (for example
+            in case of bank fees)
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          description: The amount of the additional charge.
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimMetaData'
+          description: The metadata object allows you to submit additional relevant
+            information related to the additional charge as type/value pairs. You
+            can submit an unlimited number of metadata sets.
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalChargeEvent'
+          description: Events regarding the additional charge. See request/response
+            examples.
+      required:
+      - amount
+      - document_date
+      - due_date
+      - occurence_date
+      - subject_matter
+      - your_reference
+    AdditionalChargeEvent:
+      type: object
+      description: Event for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/AdditionalChargeEventTypeEnum'
+        title:
+          type: string
+          maxLength: 255
+        occurence:
+          type: string
+          format: date-time
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - occurence
+      - title
+      - type
+    AdditionalChargeEventRequest:
+      type: object
+      description: Event for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/AdditionalChargeEventTypeEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        occurence:
+          type: string
+          format: date-time
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - occurence
+      - title
+      - type
+    AdditionalChargeEventTypeEnum:
+      enum:
+      - invoice
+      - transaction
+      type: string
+      description: |-
+        * `invoice` - invoice
+        * `transaction` - transaction
+    AdditionalChargeRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        type:
+          oneOf:
+          - $ref: '#/components/schemas/AdditionalChargeTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        subject_matter:
+          type: string
+          nullable: true
+          description: A description of the incidental claim. For example "Mahngebühren
+            1. Mahnung".
+        occurence_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date the charge was initiated. For example the date of
+            the reminder (reminder fee) or a chargeback fee's value date.
+        document_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date of the document the charge was initiated with ("Belegdatum").
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date your additional charge was due for payment. Applicaple
+            mainly for payment reminders. Leave empty if no due date exists (for example
+            in case of bank fees)
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/AmountRequest'
+          description: The amount of the additional charge.
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimMetaDataRequest'
+          description: The metadata object allows you to submit additional relevant
+            information related to the additional charge as type/value pairs. You
+            can submit an unlimited number of metadata sets.
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalChargeEventRequest'
+          description: Events regarding the additional charge. See request/response
+            examples.
+      required:
+      - amount
+      - document_date
+      - due_date
+      - occurence_date
+      - subject_matter
+      - your_reference
+    AdditionalChargeTypeEnum:
+      enum:
+      - reminder_fee
+      - bank_charge
+      - processing_fee
+      - cancellation_fee
+      - convenience_fee
+      - advisory_fee
+      - handling_fee
+      - insurance_fee
+      - legal_fee
+      - delivery_charge
+      - service_charge
+      - data_preparation
+      - communication_cost
+      - expenses
+      type: string
+      description: |-
+        * `reminder_fee` - Mahngebühr
+        * `bank_charge` - Bankgebühr
+        * `processing_fee` - Bearbeitungsgebühr
+        * `cancellation_fee` - Abbruch-/Stornierungsgebühr
+        * `convenience_fee` - Convenience fee
+        * `advisory_fee` - Advisory fee
+        * `handling_fee` - Handling fee
+        * `insurance_fee` - Insurance fee
+        * `legal_fee` - Legal fee
+        * `delivery_charge` - Delivery charge
+        * `service_charge` - Service charge
+        * `data_preparation` - Data preparation
+        * `communication_cost` - Communication cost
+        * `expenses` - Expenses
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          nullable: true
+          maxLength: 255
+        zip:
+          type: string
+          nullable: true
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          maxLength: 100
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          description: |-
+            The country, formatted as two letter ISO-3166-1 country code.
+
+            * `AF` - Afghanistan
+            * `EG` - Ägypten
+            * `AX` - Åland-Inseln
+            * `AL` - Albanien
+            * `DZ` - Algerien
+            * `AS` - Amerikanisch-Samoa
+            * `VI` - Amerikanische Jungferninseln
+            * `AD` - Andorra
+            * `AO` - Angola
+            * `AI` - Anguilla
+            * `AQ` - Antarktis
+            * `AG` - Antigua und Barbuda
+            * `GQ` - Äquatorialguinea
+            * `AR` - Argentinien
+            * `AM` - Armenien
+            * `AW` - Aruba
+            * `AZ` - Aserbaidschan
+            * `ET` - Äthiopien
+            * `AU` - Australien
+            * `BS` - Bahamas
+            * `BH` - Bahrain
+            * `BD` - Bangladesch
+            * `BB` - Barbados
+            * `BE` - Belgien
+            * `BZ` - Belize
+            * `BJ` - Benin
+            * `BM` - Bermuda
+            * `BT` - Bhutan
+            * `BO` - Bolivien
+            * `BQ` - Bonaire, Sint Eustatius und Saba
+            * `BA` - Bosnien und Herzegowina
+            * `BW` - Botswana
+            * `BV` - Bouvetinsel
+            * `BR` - Brasilien
+            * `VG` - Britische Jungferninseln
+            * `IO` - Britisches Territorium im Indischen Ozean
+            * `BN` - Brunei
+            * `BG` - Bulgarien
+            * `BF` - Burkina Faso
+            * `BI` - Burundi
+            * `CL` - Chile
+            * `CN` - China
+            * `MP` - Commonwealth der Nördlichen Marianen
+            * `CK` - Cookinseln
+            * `CR` - Costa Rica
+            * `CI` - Côte d'Ivoire
+            * `CW` - Curaçao
+            * `DK` - Dänemark
+            * `DE` - Deutschland
+            * `DM` - Dominica
+            * `DO` - Dominikanische Republik
+            * `DJ` - Dschibuti
+            * `EC` - Ecuador
+            * `SV` - El Salvador
+            * `ER` - Eritrea
+            * `EE` - Estland
+            * `FK` - Falklandinseln (Malwinen)
+            * `FO` - Faröerinseln
+            * `FJ` - Fidschi
+            * `FI` - Finnland
+            * `FR` - Frankreich
+            * `GF` - Französisch Guinea
+            * `PF` - Französisch-Polynesien
+            * `TF` - Französische Süd- und Antarktisgebiete
+            * `GA` - Gabun
+            * `GM` - Gambia
+            * `GE` - Georgien
+            * `GH` - Ghana
+            * `GI` - Gibraltar
+            * `GD` - Granada
+            * `GR` - Griechenland
+            * `GL` - Grönland
+            * `GP` - Guadeloupe
+            * `GU` - Guam
+            * `GT` - Guatemala
+            * `GG` - Guernsey
+            * `GN` - Guinea
+            * `GW` - Guinea-Bissau
+            * `GY` - Guyana
+            * `HT` - Haiti
+            * `HM` - Heard und McDonaldinseln
+            * `HN` - Honduras
+            * `HK` - Hong Kong
+            * `IN` - Indien
+            * `ID` - Indonesien
+            * `IQ` - Irak
+            * `IR` - Iran (Islamische Republik)
+            * `IE` - Irland
+            * `IS` - Island
+            * `IM` - Isle of Man
+            * `IL` - Israel
+            * `IT` - Italien
+            * `JM` - Jamaika
+            * `JP` - Japan
+            * `YE` - Jemen
+            * `JE` - Jersey
+            * `JO` - Jordanien
+            * `KY` - Kaimaninseln
+            * `KH` - Kambodscha
+            * `CM` - Kamerun
+            * `CA` - Kanada
+            * `CV` - Kap Verde
+            * `KZ` - Kasachstan
+            * `QA` - Katar
+            * `KE` - Kenia
+            * `KG` - Kirgisistan
+            * `KI` - Kirivati
+            * `CC` - Kokosinseln (Keelinginseln)
+            * `CO` - Kolumbien
+            * `KM` - Komoren
+            * `CG` - Kongo
+            * `CD` - Kongo (Demokratische Republik)
+            * `HR` - Kroatien
+            * `CU` - Kuba
+            * `KW` - Kuwait
+            * `LA` - Laos, Demokratische Volksrepublik
+            * `LS` - Lesotho
+            * `LV` - Lettland
+            * `LB` - Libanon
+            * `LR` - Liberia
+            * `LY` - Libyen
+            * `LI` - Liechtenstein
+            * `LT` - Litauen
+            * `LU` - Luxemburg
+            * `MO` - Macao
+            * `MG` - Madagaskar
+            * `MW` - Malawi
+            * `MY` - Malaysia
+            * `MV` - Malediven
+            * `ML` - Mali
+            * `MT` - Malta
+            * `MA` - Marokko
+            * `MH` - Marshallinseln
+            * `MQ` - Martinique
+            * `MR` - Mauretanien
+            * `MU` - Mauritius
+            * `YT` - Mayotte
+            * `MK` - Mazedonien
+            * `MX` - Mexiko
+            * `FM` - Mikronesien (Föderierte Staaten von)
+            * `MD` - Moldawien
+            * `MC` - Monaco
+            * `MN` - Mongolei
+            * `ME` - Montenegro
+            * `MS` - Montserrat
+            * `MZ` - Mozambique
+            * `MM` - Myanmar
+            * `NA` - Namibia
+            * `NR` - Nauru
+            * `NP` - Nepal
+            * `NC` - Neukaledonien
+            * `NZ` - Neuseeland
+            * `NI` - Nicaragua
+            * `NL` - Niederlande
+            * `NE` - Niger
+            * `NG` - Nigeria
+            * `NU` - Niue
+            * `KP` - Nordkorea
+            * `NF` - Norfolkinsel
+            * `NO` - Norwegen
+            * `OM` - Oman
+            * `AT` - Österreich
+            * `TL` - Osttimor
+            * `PK` - Pakistan
+            * `PS` - Palästina
+            * `PW` - Palau
+            * `PA` - Panama
+            * `PG` - Papua Neu Guinea
+            * `PY` - Paraguay
+            * `PE` - Peru
+            * `PH` - Philippinen
+            * `PN` - Pitcairn
+            * `PL` - Polen
+            * `PT` - Portugal
+            * `PR` - Puerto Rico
+            * `RE` - Réunion
+            * `RW` - Ruanda
+            * `RO` - Rumänien
+            * `RU` - Russland
+            * `BL` - Saint-Barthélemy
+            * `PM` - Saint-Pierre und Miquelon
+            * `SB` - Salomonen
+            * `ZM` - Sambia
+            * `WS` - Samoa
+            * `SM` - San Marino
+            * `ST` - São Tomé und Príncipe
+            * `SA` - Saudi Arabien
+            * `SE` - Schweden
+            * `CH` - Schweiz
+            * `SN` - Senegal
+            * `RS` - Serbien
+            * `SC` - Seychellen
+            * `SL` - Sierra Leone
+            * `ZW` - Simbabwe
+            * `SG` - Singapur
+            * `SX` - Sint Maarten (niederländischer Teil)
+            * `SK` - Slowakei
+            * `SI` - Slowenien
+            * `SO` - Somalia
+            * `ES` - Spanien
+            * `SJ` - Spitzbergen und Jan Mayen
+            * `LK` - Sri Lanka
+            * `SH` - St. Helena, Ascension und Tristan da Cunha
+            * `KN` - St. Kitts und Nevis
+            * `LC` - St. Lucia
+            * `MF` - St. Martin (französischer Teil)
+            * `VC` - St. Vincent und die Grenadinen
+            * `ZA` - Südafrika
+            * `SD` - Sudan
+            * `GS` - Südgeorgien und die Südlichen Sandwichinseln
+            * `KR` - Südkorea
+            * `SS` - Südsudan
+            * `SR` - Surinam
+            * `SZ` - Swasiland
+            * `SY` - Syrien
+            * `TJ` - Tadschikistan
+            * `TW` - Taiwan (Provinz Chinas)
+            * `TZ` - Tansania
+            * `TH` - Thailand
+            * `TG` - Togo
+            * `TK` - Tokelau
+            * `TO` - Tonga
+            * `TT` - Trinidad und Tobago
+            * `TD` - Tschad
+            * `CZ` - Tschechien
+            * `TN` - Tunesien
+            * `TR` - Türkei
+            * `TM` - Turkmenistan
+            * `TC` - Turks- und Caicosinseln
+            * `TV` - Tuvalu
+            * `UM` - USA - Sonstige Kleine Inseln
+            * `UG` - Uganda
+            * `UA` - Ukraine
+            * `HU` - Ungarn
+            * `UY` - Uruguay
+            * `UZ` - Usbekistan
+            * `VU` - Vanuatu
+            * `VA` - Vatikanstadt
+            * `VE` - Venezuela (Bolivarische Republik)
+            * `AE` - Vereinigte Arabische Emirate
+            * `US` - Vereinigte Staaten von Amerika
+            * `GB` - Vereinigtes Königreich
+            * `VN` - Vietnam
+            * `WF` - Wallis und Futuna
+            * `CX` - Weihnachtsinsel
+            * `BY` - Weißrussland
+            * `EH` - Westsahara
+            * `CF` - Zentralafrikanische Republik
+            * `CY` - Zypern
+      required:
+      - city
+      - country
+      - street
+      - zip
+    AddressRequest:
+      type: object
+      properties:
+        street:
+          type: string
+          nullable: true
+          maxLength: 255
+        zip:
+          type: string
+          nullable: true
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          maxLength: 100
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          description: |-
+            The country, formatted as two letter ISO-3166-1 country code.
+
+            * `AF` - Afghanistan
+            * `EG` - Ägypten
+            * `AX` - Åland-Inseln
+            * `AL` - Albanien
+            * `DZ` - Algerien
+            * `AS` - Amerikanisch-Samoa
+            * `VI` - Amerikanische Jungferninseln
+            * `AD` - Andorra
+            * `AO` - Angola
+            * `AI` - Anguilla
+            * `AQ` - Antarktis
+            * `AG` - Antigua und Barbuda
+            * `GQ` - Äquatorialguinea
+            * `AR` - Argentinien
+            * `AM` - Armenien
+            * `AW` - Aruba
+            * `AZ` - Aserbaidschan
+            * `ET` - Äthiopien
+            * `AU` - Australien
+            * `BS` - Bahamas
+            * `BH` - Bahrain
+            * `BD` - Bangladesch
+            * `BB` - Barbados
+            * `BE` - Belgien
+            * `BZ` - Belize
+            * `BJ` - Benin
+            * `BM` - Bermuda
+            * `BT` - Bhutan
+            * `BO` - Bolivien
+            * `BQ` - Bonaire, Sint Eustatius und Saba
+            * `BA` - Bosnien und Herzegowina
+            * `BW` - Botswana
+            * `BV` - Bouvetinsel
+            * `BR` - Brasilien
+            * `VG` - Britische Jungferninseln
+            * `IO` - Britisches Territorium im Indischen Ozean
+            * `BN` - Brunei
+            * `BG` - Bulgarien
+            * `BF` - Burkina Faso
+            * `BI` - Burundi
+            * `CL` - Chile
+            * `CN` - China
+            * `MP` - Commonwealth der Nördlichen Marianen
+            * `CK` - Cookinseln
+            * `CR` - Costa Rica
+            * `CI` - Côte d'Ivoire
+            * `CW` - Curaçao
+            * `DK` - Dänemark
+            * `DE` - Deutschland
+            * `DM` - Dominica
+            * `DO` - Dominikanische Republik
+            * `DJ` - Dschibuti
+            * `EC` - Ecuador
+            * `SV` - El Salvador
+            * `ER` - Eritrea
+            * `EE` - Estland
+            * `FK` - Falklandinseln (Malwinen)
+            * `FO` - Faröerinseln
+            * `FJ` - Fidschi
+            * `FI` - Finnland
+            * `FR` - Frankreich
+            * `GF` - Französisch Guinea
+            * `PF` - Französisch-Polynesien
+            * `TF` - Französische Süd- und Antarktisgebiete
+            * `GA` - Gabun
+            * `GM` - Gambia
+            * `GE` - Georgien
+            * `GH` - Ghana
+            * `GI` - Gibraltar
+            * `GD` - Granada
+            * `GR` - Griechenland
+            * `GL` - Grönland
+            * `GP` - Guadeloupe
+            * `GU` - Guam
+            * `GT` - Guatemala
+            * `GG` - Guernsey
+            * `GN` - Guinea
+            * `GW` - Guinea-Bissau
+            * `GY` - Guyana
+            * `HT` - Haiti
+            * `HM` - Heard und McDonaldinseln
+            * `HN` - Honduras
+            * `HK` - Hong Kong
+            * `IN` - Indien
+            * `ID` - Indonesien
+            * `IQ` - Irak
+            * `IR` - Iran (Islamische Republik)
+            * `IE` - Irland
+            * `IS` - Island
+            * `IM` - Isle of Man
+            * `IL` - Israel
+            * `IT` - Italien
+            * `JM` - Jamaika
+            * `JP` - Japan
+            * `YE` - Jemen
+            * `JE` - Jersey
+            * `JO` - Jordanien
+            * `KY` - Kaimaninseln
+            * `KH` - Kambodscha
+            * `CM` - Kamerun
+            * `CA` - Kanada
+            * `CV` - Kap Verde
+            * `KZ` - Kasachstan
+            * `QA` - Katar
+            * `KE` - Kenia
+            * `KG` - Kirgisistan
+            * `KI` - Kirivati
+            * `CC` - Kokosinseln (Keelinginseln)
+            * `CO` - Kolumbien
+            * `KM` - Komoren
+            * `CG` - Kongo
+            * `CD` - Kongo (Demokratische Republik)
+            * `HR` - Kroatien
+            * `CU` - Kuba
+            * `KW` - Kuwait
+            * `LA` - Laos, Demokratische Volksrepublik
+            * `LS` - Lesotho
+            * `LV` - Lettland
+            * `LB` - Libanon
+            * `LR` - Liberia
+            * `LY` - Libyen
+            * `LI` - Liechtenstein
+            * `LT` - Litauen
+            * `LU` - Luxemburg
+            * `MO` - Macao
+            * `MG` - Madagaskar
+            * `MW` - Malawi
+            * `MY` - Malaysia
+            * `MV` - Malediven
+            * `ML` - Mali
+            * `MT` - Malta
+            * `MA` - Marokko
+            * `MH` - Marshallinseln
+            * `MQ` - Martinique
+            * `MR` - Mauretanien
+            * `MU` - Mauritius
+            * `YT` - Mayotte
+            * `MK` - Mazedonien
+            * `MX` - Mexiko
+            * `FM` - Mikronesien (Föderierte Staaten von)
+            * `MD` - Moldawien
+            * `MC` - Monaco
+            * `MN` - Mongolei
+            * `ME` - Montenegro
+            * `MS` - Montserrat
+            * `MZ` - Mozambique
+            * `MM` - Myanmar
+            * `NA` - Namibia
+            * `NR` - Nauru
+            * `NP` - Nepal
+            * `NC` - Neukaledonien
+            * `NZ` - Neuseeland
+            * `NI` - Nicaragua
+            * `NL` - Niederlande
+            * `NE` - Niger
+            * `NG` - Nigeria
+            * `NU` - Niue
+            * `KP` - Nordkorea
+            * `NF` - Norfolkinsel
+            * `NO` - Norwegen
+            * `OM` - Oman
+            * `AT` - Österreich
+            * `TL` - Osttimor
+            * `PK` - Pakistan
+            * `PS` - Palästina
+            * `PW` - Palau
+            * `PA` - Panama
+            * `PG` - Papua Neu Guinea
+            * `PY` - Paraguay
+            * `PE` - Peru
+            * `PH` - Philippinen
+            * `PN` - Pitcairn
+            * `PL` - Polen
+            * `PT` - Portugal
+            * `PR` - Puerto Rico
+            * `RE` - Réunion
+            * `RW` - Ruanda
+            * `RO` - Rumänien
+            * `RU` - Russland
+            * `BL` - Saint-Barthélemy
+            * `PM` - Saint-Pierre und Miquelon
+            * `SB` - Salomonen
+            * `ZM` - Sambia
+            * `WS` - Samoa
+            * `SM` - San Marino
+            * `ST` - São Tomé und Príncipe
+            * `SA` - Saudi Arabien
+            * `SE` - Schweden
+            * `CH` - Schweiz
+            * `SN` - Senegal
+            * `RS` - Serbien
+            * `SC` - Seychellen
+            * `SL` - Sierra Leone
+            * `ZW` - Simbabwe
+            * `SG` - Singapur
+            * `SX` - Sint Maarten (niederländischer Teil)
+            * `SK` - Slowakei
+            * `SI` - Slowenien
+            * `SO` - Somalia
+            * `ES` - Spanien
+            * `SJ` - Spitzbergen und Jan Mayen
+            * `LK` - Sri Lanka
+            * `SH` - St. Helena, Ascension und Tristan da Cunha
+            * `KN` - St. Kitts und Nevis
+            * `LC` - St. Lucia
+            * `MF` - St. Martin (französischer Teil)
+            * `VC` - St. Vincent und die Grenadinen
+            * `ZA` - Südafrika
+            * `SD` - Sudan
+            * `GS` - Südgeorgien und die Südlichen Sandwichinseln
+            * `KR` - Südkorea
+            * `SS` - Südsudan
+            * `SR` - Surinam
+            * `SZ` - Swasiland
+            * `SY` - Syrien
+            * `TJ` - Tadschikistan
+            * `TW` - Taiwan (Provinz Chinas)
+            * `TZ` - Tansania
+            * `TH` - Thailand
+            * `TG` - Togo
+            * `TK` - Tokelau
+            * `TO` - Tonga
+            * `TT` - Trinidad und Tobago
+            * `TD` - Tschad
+            * `CZ` - Tschechien
+            * `TN` - Tunesien
+            * `TR` - Türkei
+            * `TM` - Turkmenistan
+            * `TC` - Turks- und Caicosinseln
+            * `TV` - Tuvalu
+            * `UM` - USA - Sonstige Kleine Inseln
+            * `UG` - Uganda
+            * `UA` - Ukraine
+            * `HU` - Ungarn
+            * `UY` - Uruguay
+            * `UZ` - Usbekistan
+            * `VU` - Vanuatu
+            * `VA` - Vatikanstadt
+            * `VE` - Venezuela (Bolivarische Republik)
+            * `AE` - Vereinigte Arabische Emirate
+            * `US` - Vereinigte Staaten von Amerika
+            * `GB` - Vereinigtes Königreich
+            * `VN` - Vietnam
+            * `WF` - Wallis und Futuna
+            * `CX` - Weihnachtsinsel
+            * `BY` - Weißrussland
+            * `EH` - Westsahara
+            * `CF` - Zentralafrikanische Republik
+            * `CY` - Zypern
+      required:
+      - city
+      - country
+      - street
+      - zip
+    Amount:
+      type: object
+      description: Amount
+      properties:
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,2})?$
+          nullable: true
+          description: A string representation of a positive integer or decimal with
+            two decimal places.
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          description: |-
+            The three-character currency code (ISO-4217).
+
+            * `EUR` - Euro
+            * `USD` - US Dollar
+    AmountRequest:
+      type: object
+      description: Amount
+      properties:
+        value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,2})?$
+          nullable: true
+          description: A string representation of a positive integer or decimal with
+            two decimal places.
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          description: |-
+            The three-character currency code (ISO-4217).
+
+            * `EUR` - Euro
+            * `USD` - US Dollar
+    BankAccount:
+      type: object
+      properties:
+        iban:
+          type: string
+          maxLength: 34
+        bic:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - iban
+    BankAccountRequest:
+      type: object
+      properties:
+        iban:
+          type: string
+          minLength: 1
+          maxLength: 34
+        bic:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - iban
+    BlankEnum:
+      enum:
+      - ''
+    Claim:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+        submission_state:
+          allOf:
+          - $ref: '#/components/schemas/SubmissionStateEnum'
+          readOnly: true
+        debtor:
+          type: string
+          format: uuid
+          description: Your existing debtor's ID.
+        mandate:
+          allOf:
+          - $ref: '#/components/schemas/MandateMinInfo'
+          readOnly: true
+          description: After a submitted claim was accepted by our team, it is added
+            to a mandate.
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        subject_matter:
+          type: string
+          nullable: true
+          description: A detailed description of the delivered goods or the provided
+            service.
+        occurence_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date of emergence of the principal claim ("Vertragsdatum").
+        document_reference:
+          type: string
+          nullable: true
+          description: The unique reference of your invoice ("Rechnungsnummer"), contract
+            ("Vertragsnummer") or other document ("Belegnummer").
+          maxLength: 255
+        document_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date of your invoice ("Rechnungsdatum"), contract ("Vertragsdatum")
+            or other document ("Belegdatum").
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date your claim was due for payment.
+        reminder_date:
+          type: string
+          format: date
+          nullable: true
+          description: 'The date of your first reminder ("Mahnung") to your customer.
+            Please note: the date of a "Zahlungserinnerung" does not qualify. It must
+            be a "Mahnung" by german standards.'
+        delay_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date from which your debtor is in delay ("Verzugsdatum").
+            Please check back with our team if you are unsure what to place here.
+        total_claim_amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          description: The total **open** amount of the claim, including additional
+            charges. Equals the sum of the main claim amount and the sum of all additional
+            charges' amounts - minus any payments you already received on the claim.
+        main_claim_amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          description: The **original amount** of the principal claim including VAT
+            or sales tax. Does not have any additional charges added or payments subtracted.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: The items listed on your invoice or contract ("Rechnungsposten"
+            or "Leistungen")
+        additional_charges_amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          description: The sum of all additional charges of the claim.
+        additional_charges:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalCharge'
+          description: Additional charges for your claim ("incidental claims" or "Nebenforderungen").
+            Those are typically reminder fees ("Mahngebühren") or bank charges for
+            chargebacks ("Rücklastschriftgebühren").
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimPayment'
+          description: Any payments you have received for your claim so far.
+        starting_approach:
+          allOf:
+          - $ref: '#/components/schemas/StartingApproachEnum'
+          description: |-
+            Our starting approach to collect the claim: extrajudicial ("außergerichtlich") or judicial ("gerichtliches Mahnverfahren").
+
+            * `extrajudicial` - Zunächst außergerichtlich starten
+            * `judicial` - Gleich Mahnbescheid beantragen
+        claim_disputed:
+          allOf:
+          - $ref: '#/components/schemas/ClaimDisputedEnum'
+          description: |-
+            Tell us if the claim was disputed by your customer. If you are unsure what to select here, please check back with our team.
+
+            * `True` - Ja
+            * `False` - Nein
+        obligation_fulfilled:
+          allOf:
+          - $ref: '#/components/schemas/ObligationFulfilledEnum'
+          description: |-
+            Tell us if you fully fulfilled your contractual obligation towards the debtor. If you are unsure what to select here, please check back with our team.
+
+            * `True` - Ja
+            * `False` - Nein
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadedDocument'
+          readOnly: true
+          description: Documents relevant for processing of the claim. Usually invoices,
+            reminders, contracts or correspondence with the debtor.
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimMetaData'
+          description: The metadata object allows you to submit additional relevant
+            information related to the claim as type/value pairs. You can submit an
+            unlimited number of metadata sets.
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimEvent'
+          description: Events regarding the claim. See request/response examples.
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        updated:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - claim_disputed
+      - created
+      - debtor
+      - delay_date
+      - document_date
+      - document_reference
+      - documents
+      - due_date
+      - href
+      - main_claim_amount
+      - mandate
+      - obligation_fulfilled
+      - occurence_date
+      - reminder_date
+      - starting_approach
+      - subject_matter
+      - submission_state
+      - total_claim_amount
+      - updated
+      - your_reference
+    ClaimDisputedEnum:
+      enum:
+      - true
+      - false
+      type: boolean
+      description: |-
+        * `True` - Ja
+        * `False` - Nein
+    ClaimEvent:
+      type: object
+      description: Event for claims
+      properties:
+        type:
+          $ref: '#/components/schemas/ClaimEventTypeEnum'
+        title:
+          type: string
+          maxLength: 255
+        occurence:
+          type: string
+          format: date-time
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - occurence
+      - title
+      - type
+    ClaimEventRequest:
+      type: object
+      description: Event for claims
+      properties:
+        type:
+          $ref: '#/components/schemas/ClaimEventTypeEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        occurence:
+          type: string
+          format: date-time
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - occurence
+      - title
+      - type
+    ClaimEventTypeEnum:
+      enum:
+      - claim
+      - delivery
+      type: string
+      description: |-
+        * `claim` - claim
+        * `delivery` - delivery
+    ClaimMetaData:
+      type: object
+      description: Metadata for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/ClaimMetaDataTypeEnum'
+        value:
+          type: string
+          maxLength: 255
+      required:
+      - type
+      - value
+    ClaimMetaDataRequest:
+      type: object
+      description: Metadata for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/ClaimMetaDataTypeEnum'
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - type
+      - value
+    ClaimMetaDataTypeEnum:
+      enum:
+      - comment
+      - invoice:reference
+      - invoice:date
+      - invoice:address_line_1
+      - invoice:address_line_2
+      - invoice:address_city
+      - invoice:address_country
+      - invoice:address_zip
+      - invoice:amount
+      - transaction:reference
+      - transaction:source_ip_address
+      - contract:reference
+      - report:reference
+      - account:reference
+      - claim:holder:address:country
+      - claim:holder:address:city
+      - claim:holder:name
+      - dunning:level
+      - reminder:date
+      - reminder:amount:value
+      - reminder:amount:currency
+      - notification:date
+      - confirmation:email
+      - order:rate
+      - order:deposit
+      - order:cashback
+      - order:prepaid
+      - order:type
+      - rental:pickup:date
+      - rental:pickup:time
+      - rental:pickup:city
+      - rental:dropoff:date
+      - rental:dropoff:time
+      - rental:dropoff:city
+      - rental:gps_tracking
+      - rental:charged_items
+      - payment:method
+      - import:csv:filename
+      - insurance:bonus_malus_system
+      - insurance:contribution_rate
+      - insurance:regional_class_liability_insurance
+      - insurance:regional_class_partial_coverage
+      - payment:frequency
+      - language
+      - tax:id
+      - notification_delivery:date
+      - merchant:address_line1
+      - merchant:address_city
+      - merchant:address_zip
+      - merchant:address_country
+      - merchant:company_name
+      - merchant:company_type
+      - merchant:representative_firstname
+      - merchant:representative_secondname
+      - merchant:website_url
+      - chargeback:reason
+      - shop:website_url
+      - subscription:overdue_period
+      - subscription:duration
+      - subscription:start
+      - subscription:delivery:address
+      - subscription:reference
+      - subscription:renewal
+      - subscription:last_login
+      - subscription:photo_available
+      - subscription:type
+      - subscription:termination
+      - medical:patient
+      - debtor:file_id
+      - email:seller
+      - name:seller
+      - addressline:seller
+      - zip:seller
+      - city:seller
+      - name:ditsributor
+      - email:distributor
+      - addressline:distributor
+      - zip:distributor
+      - city:distributor
+      - logo:distributor_pdf
+      - logo:distributor_email
+      - account:beneficiary
+      - purchase:price
+      - conditional:purchase_price
+      - direct:payments
+      - VAT
+      - product:type
+      type: string
+      description: |-
+        * `comment` - comment
+        * `invoice:reference` - invoice:reference
+        * `invoice:date` - invoice:date
+        * `invoice:address_line_1` - invoice:address_line_1
+        * `invoice:address_line_2` - invoice:address_line_2
+        * `invoice:address_city` - invoice:address_city
+        * `invoice:address_country` - invoice:address_country
+        * `invoice:address_zip` - invoice:address_zip
+        * `invoice:amount` - invoice:amount
+        * `transaction:reference` - transaction:reference
+        * `transaction:source_ip_address` - transaction:source_ip_address
+        * `contract:reference` - contract:reference
+        * `report:reference` - report:reference
+        * `account:reference` - account:reference
+        * `claim:holder:address:country` - claim:holder:address:country
+        * `claim:holder:address:city` - claim:holder:address:city
+        * `claim:holder:name` - claim:holder:name
+        * `dunning:level` - dunning:level
+        * `reminder:date` - reminder:date
+        * `reminder:amount:value` - reminder:amount:value
+        * `reminder:amount:currency` - reminder:amount:currency
+        * `notification:date` - notification:date
+        * `confirmation:email` - confirmation:email
+        * `order:rate` - order:rate
+        * `order:deposit` - order:deposit
+        * `order:cashback` - order:cashback
+        * `order:prepaid` - order:prepaid
+        * `order:type` - order:type
+        * `rental:pickup:date` - rental:pickup:date
+        * `rental:pickup:time` - rental:pickup:time
+        * `rental:pickup:city` - rental:pickup:city
+        * `rental:dropoff:date` - rental:dropoff:date
+        * `rental:dropoff:time` - rental:dropoff:time
+        * `rental:dropoff:city` - rental:dropoff:city
+        * `rental:gps_tracking` - rental:gps_tracking
+        * `rental:charged_items` - rental:charged_items
+        * `payment:method` - payment:method
+        * `import:csv:filename` - import:csv:filename
+        * `insurance:bonus_malus_system` - insurance:bonus_malus_system
+        * `insurance:contribution_rate` - insurance:contribution_rate
+        * `insurance:regional_class_liability_insurance` - insurance:regional_class_liability_insurance
+        * `insurance:regional_class_partial_coverage` - insurance:regional_class_partial_coverage
+        * `payment:frequency` - payment:frequency
+        * `language` - language
+        * `tax:id` - tax:id
+        * `notification_delivery:date` - notification_delivery:date
+        * `merchant:address_line1` - merchant:address_line1
+        * `merchant:address_city` - merchant:address_city
+        * `merchant:address_zip` - merchant:address_zip
+        * `merchant:address_country` - merchant:address_country
+        * `merchant:company_name` - merchant:company_name
+        * `merchant:company_type` - merchant:company_type
+        * `merchant:representative_firstname` - merchant:representative_firstname
+        * `merchant:representative_secondname` - merchant:representative_secondname
+        * `merchant:website_url` - merchant:website_url
+        * `chargeback:reason` - chargeback:reason
+        * `shop:website_url` - shop:website_url
+        * `subscription:overdue_period` - subscription:overdue_period
+        * `subscription:duration` - subscription:duration
+        * `subscription:start` - subscription:start
+        * `subscription:delivery:address` - subscription:delivery:address
+        * `subscription:reference` - subscription:reference
+        * `subscription:renewal` - subscription:renewal
+        * `subscription:last_login` - subscription:last_login
+        * `subscription:photo_available` - subscription:photo_available
+        * `subscription:type` - subscription:type
+        * `subscription:termination` - subscription:termination
+        * `medical:patient` - medical:patient
+        * `debtor:file_id` - debtor:file_id
+        * `email:seller` - email:seller
+        * `name:seller` - name:seller
+        * `addressline:seller` - addressline:seller
+        * `zip:seller` - zip:seller
+        * `city:seller` - city:seller
+        * `name:ditsributor` - name:ditsributor
+        * `email:distributor` - email:distributor
+        * `addressline:distributor` - addressline:distributor
+        * `zip:distributor` - zip:distributor
+        * `city:distributor` - city:distributor
+        * `logo:distributor_pdf` - logo:distributor_pdf
+        * `logo:distributor_email` - logo:distributor_email
+        * `account:beneficiary` - account:beneficiary
+        * `purchase:price` - purchase:price
+        * `conditional:purchase_price` - conditional:purchase_price
+        * `direct:payments` - direct:payments
+        * `VAT` - VAT
+        * `product:type` - product:type
+    ClaimMinInfo:
+      type: object
+      description: |-
+        Only gives the claim's uuids and href for claims.
+        For use in MandateSerializer
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMinInfo'
+      required:
+      - href
+    ClaimPayment:
+      type: object
+      description: A payment associated for a claim
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          description: The amount of the payment.
+        value_date:
+          type: string
+          format: date
+          description: The value date of the payment.
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMetaData'
+          description: The metadata object allows you to submit additional relevant
+            information related to the payment as type/value pairs. You can submit
+            an unlimited number of metadata sets.
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - created
+      - href
+      - value_date
+    ClaimPaymentRequest:
+      type: object
+      description: A payment associated for a claim
+      properties:
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/AmountRequest'
+          description: The amount of the payment.
+        value_date:
+          type: string
+          format: date
+          description: The value date of the payment.
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMetaDataRequest'
+          description: The metadata object allows you to submit additional relevant
+            information related to the payment as type/value pairs. You can submit
+            an unlimited number of metadata sets.
+      required:
+      - amount
+      - value_date
+    ClaimSerializerWithoutIdRequest:
+      type: object
+      properties:
+        debtor:
+          type: string
+          format: uuid
+          description: Your existing debtor's ID.
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        subject_matter:
+          type: string
+          nullable: true
+          description: A detailed description of the delivered goods or the provided
+            service.
+        occurence_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date of emergence of the principal claim ("Vertragsdatum").
+        document_reference:
+          type: string
+          nullable: true
+          description: The unique reference of your invoice ("Rechnungsnummer"), contract
+            ("Vertragsnummer") or other document ("Belegnummer").
+          maxLength: 255
+        document_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date of your invoice ("Rechnungsdatum"), contract ("Vertragsdatum")
+            or other document ("Belegdatum").
+        due_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date your claim was due for payment.
+        reminder_date:
+          type: string
+          format: date
+          nullable: true
+          description: 'The date of your first reminder ("Mahnung") to your customer.
+            Please note: the date of a "Zahlungserinnerung" does not qualify. It must
+            be a "Mahnung" by german standards.'
+        delay_date:
+          type: string
+          format: date
+          nullable: true
+          description: The date from which your debtor is in delay ("Verzugsdatum").
+            Please check back with our team if you are unsure what to place here.
+        total_claim_amount:
+          allOf:
+          - $ref: '#/components/schemas/AmountRequest'
+          description: The total **open** amount of the claim, including additional
+            charges. Equals the sum of the main claim amount and the sum of all additional
+            charges' amounts - minus any payments you already received on the claim.
+        main_claim_amount:
+          allOf:
+          - $ref: '#/components/schemas/AmountRequest'
+          description: The **original amount** of the principal claim including VAT
+            or sales tax. Does not have any additional charges added or payments subtracted.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemRequest'
+          description: The items listed on your invoice or contract ("Rechnungsposten"
+            or "Leistungen")
+        additional_charges_amount:
+          allOf:
+          - $ref: '#/components/schemas/AmountRequest'
+          description: The sum of all additional charges of the claim.
+        additional_charges:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalChargeRequest'
+          description: Additional charges for your claim ("incidental claims" or "Nebenforderungen").
+            Those are typically reminder fees ("Mahngebühren") or bank charges for
+            chargebacks ("Rücklastschriftgebühren").
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimPaymentRequest'
+          description: Any payments you have received for your claim so far.
+        starting_approach:
+          allOf:
+          - $ref: '#/components/schemas/StartingApproachEnum'
+          description: |-
+            Our starting approach to collect the claim: extrajudicial ("außergerichtlich") or judicial ("gerichtliches Mahnverfahren").
+
+            * `extrajudicial` - Zunächst außergerichtlich starten
+            * `judicial` - Gleich Mahnbescheid beantragen
+        claim_disputed:
+          allOf:
+          - $ref: '#/components/schemas/ClaimDisputedEnum'
+          description: |-
+            Tell us if the claim was disputed by your customer. If you are unsure what to select here, please check back with our team.
+
+            * `True` - Ja
+            * `False` - Nein
+        obligation_fulfilled:
+          allOf:
+          - $ref: '#/components/schemas/ObligationFulfilledEnum'
+          description: |-
+            Tell us if you fully fulfilled your contractual obligation towards the debtor. If you are unsure what to select here, please check back with our team.
+
+            * `True` - Ja
+            * `False` - Nein
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimMetaDataRequest'
+          description: The metadata object allows you to submit additional relevant
+            information related to the claim as type/value pairs. You can submit an
+            unlimited number of metadata sets.
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimEventRequest'
+          description: Events regarding the claim. See request/response examples.
+      required:
+      - claim_disputed
+      - debtor
+      - delay_date
+      - document_date
+      - document_reference
+      - due_date
+      - main_claim_amount
+      - obligation_fulfilled
+      - occurence_date
+      - reminder_date
+      - starting_approach
+      - subject_matter
+      - total_claim_amount
+      - your_reference
+    CommunicationChannel:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/CommunicationChannelTypeEnum'
+        value:
+          type: string
+          maxLength: 255
+      required:
+      - type
+      - value
+    CommunicationChannelRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/CommunicationChannelTypeEnum'
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - type
+      - value
+    CommunicationChannelTypeEnum:
+      enum:
+      - email
+      - phone
+      - mobile_phone
+      - fax
+      - skype
+      - facebook_messenger
+      - imessage
+      - whatsapp
+      - facebook
+      - twitter
+      - linkedin
+      - xing
+      - social_various
+      - website_url
+      - web_various
+      type: string
+      description: |-
+        * `email` - E-Mail
+        * `phone` - Telefon
+        * `mobile_phone` - Mobiltelefon
+        * `fax` - Fax
+        * `skype` - Skype
+        * `facebook_messenger` - Facebook Messenger
+        * `imessage` - iMessage
+        * `whatsapp` - WhatAapp
+        * `facebook` - Facebook
+        * `twitter` - Twitter
+        * `linkedin` - Linkedin
+        * `xing` - Xing
+        * `social_various` - Anderes Social Medium
+        * `website_url` - Website URL
+        * `web_various` - Andere Web-Quelle
+    CountryEnum:
+      enum:
+      - AF
+      - EG
+      - AX
+      - AL
+      - DZ
+      - AS
+      - VI
+      - AD
+      - AO
+      - AI
+      - AQ
+      - AG
+      - GQ
+      - AR
+      - AM
+      - AW
+      - AZ
+      - ET
+      - AU
+      - BS
+      - BH
+      - BD
+      - BB
+      - BE
+      - BZ
+      - BJ
+      - BM
+      - BT
+      - BO
+      - BQ
+      - BA
+      - BW
+      - BV
+      - BR
+      - VG
+      - IO
+      - BN
+      - BG
+      - BF
+      - BI
+      - CL
+      - CN
+      - MP
+      - CK
+      - CR
+      - CI
+      - CW
+      - DK
+      - DE
+      - DM
+      - DO
+      - DJ
+      - EC
+      - SV
+      - ER
+      - EE
+      - FK
+      - FO
+      - FJ
+      - FI
+      - FR
+      - GF
+      - PF
+      - TF
+      - GA
+      - GM
+      - GE
+      - GH
+      - GI
+      - GD
+      - GR
+      - GL
+      - GP
+      - GU
+      - GT
+      - GG
+      - GN
+      - GW
+      - GY
+      - HT
+      - HM
+      - HN
+      - HK
+      - IN
+      - ID
+      - IQ
+      - IR
+      - IE
+      - IS
+      - IM
+      - IL
+      - IT
+      - JM
+      - JP
+      - YE
+      - JE
+      - JO
+      - KY
+      - KH
+      - CM
+      - CA
+      - CV
+      - KZ
+      - QA
+      - KE
+      - KG
+      - KI
+      - CC
+      - CO
+      - KM
+      - CG
+      - CD
+      - HR
+      - CU
+      - KW
+      - LA
+      - LS
+      - LV
+      - LB
+      - LR
+      - LY
+      - LI
+      - LT
+      - LU
+      - MO
+      - MG
+      - MW
+      - MY
+      - MV
+      - ML
+      - MT
+      - MA
+      - MH
+      - MQ
+      - MR
+      - MU
+      - YT
+      - MK
+      - MX
+      - FM
+      - MD
+      - MC
+      - MN
+      - ME
+      - MS
+      - MZ
+      - MM
+      - NA
+      - NR
+      - NP
+      - NC
+      - NZ
+      - NI
+      - NL
+      - NE
+      - NG
+      - NU
+      - KP
+      - NF
+      - 'NO'
+      - OM
+      - AT
+      - TL
+      - PK
+      - PS
+      - PW
+      - PA
+      - PG
+      - PY
+      - PE
+      - PH
+      - PN
+      - PL
+      - PT
+      - PR
+      - RE
+      - RW
+      - RO
+      - RU
+      - BL
+      - PM
+      - SB
+      - ZM
+      - WS
+      - SM
+      - ST
+      - SA
+      - SE
+      - CH
+      - SN
+      - RS
+      - SC
+      - SL
+      - ZW
+      - SG
+      - SX
+      - SK
+      - SI
+      - SO
+      - ES
+      - SJ
+      - LK
+      - SH
+      - KN
+      - LC
+      - MF
+      - VC
+      - ZA
+      - SD
+      - GS
+      - KR
+      - SS
+      - SR
+      - SZ
+      - SY
+      - TJ
+      - TW
+      - TZ
+      - TH
+      - TG
+      - TK
+      - TO
+      - TT
+      - TD
+      - CZ
+      - TN
+      - TR
+      - TM
+      - TC
+      - TV
+      - UM
+      - UG
+      - UA
+      - HU
+      - UY
+      - UZ
+      - VU
+      - VA
+      - VE
+      - AE
+      - US
+      - GB
+      - VN
+      - WF
+      - CX
+      - BY
+      - EH
+      - CF
+      - CY
+      type: string
+      description: |-
+        * `AF` - Afghanistan
+        * `EG` - Ägypten
+        * `AX` - Åland-Inseln
+        * `AL` - Albanien
+        * `DZ` - Algerien
+        * `AS` - Amerikanisch-Samoa
+        * `VI` - Amerikanische Jungferninseln
+        * `AD` - Andorra
+        * `AO` - Angola
+        * `AI` - Anguilla
+        * `AQ` - Antarktis
+        * `AG` - Antigua und Barbuda
+        * `GQ` - Äquatorialguinea
+        * `AR` - Argentinien
+        * `AM` - Armenien
+        * `AW` - Aruba
+        * `AZ` - Aserbaidschan
+        * `ET` - Äthiopien
+        * `AU` - Australien
+        * `BS` - Bahamas
+        * `BH` - Bahrain
+        * `BD` - Bangladesch
+        * `BB` - Barbados
+        * `BE` - Belgien
+        * `BZ` - Belize
+        * `BJ` - Benin
+        * `BM` - Bermuda
+        * `BT` - Bhutan
+        * `BO` - Bolivien
+        * `BQ` - Bonaire, Sint Eustatius und Saba
+        * `BA` - Bosnien und Herzegowina
+        * `BW` - Botswana
+        * `BV` - Bouvetinsel
+        * `BR` - Brasilien
+        * `VG` - Britische Jungferninseln
+        * `IO` - Britisches Territorium im Indischen Ozean
+        * `BN` - Brunei
+        * `BG` - Bulgarien
+        * `BF` - Burkina Faso
+        * `BI` - Burundi
+        * `CL` - Chile
+        * `CN` - China
+        * `MP` - Commonwealth der Nördlichen Marianen
+        * `CK` - Cookinseln
+        * `CR` - Costa Rica
+        * `CI` - Côte d'Ivoire
+        * `CW` - Curaçao
+        * `DK` - Dänemark
+        * `DE` - Deutschland
+        * `DM` - Dominica
+        * `DO` - Dominikanische Republik
+        * `DJ` - Dschibuti
+        * `EC` - Ecuador
+        * `SV` - El Salvador
+        * `ER` - Eritrea
+        * `EE` - Estland
+        * `FK` - Falklandinseln (Malwinen)
+        * `FO` - Faröerinseln
+        * `FJ` - Fidschi
+        * `FI` - Finnland
+        * `FR` - Frankreich
+        * `GF` - Französisch Guinea
+        * `PF` - Französisch-Polynesien
+        * `TF` - Französische Süd- und Antarktisgebiete
+        * `GA` - Gabun
+        * `GM` - Gambia
+        * `GE` - Georgien
+        * `GH` - Ghana
+        * `GI` - Gibraltar
+        * `GD` - Granada
+        * `GR` - Griechenland
+        * `GL` - Grönland
+        * `GP` - Guadeloupe
+        * `GU` - Guam
+        * `GT` - Guatemala
+        * `GG` - Guernsey
+        * `GN` - Guinea
+        * `GW` - Guinea-Bissau
+        * `GY` - Guyana
+        * `HT` - Haiti
+        * `HM` - Heard und McDonaldinseln
+        * `HN` - Honduras
+        * `HK` - Hong Kong
+        * `IN` - Indien
+        * `ID` - Indonesien
+        * `IQ` - Irak
+        * `IR` - Iran (Islamische Republik)
+        * `IE` - Irland
+        * `IS` - Island
+        * `IM` - Isle of Man
+        * `IL` - Israel
+        * `IT` - Italien
+        * `JM` - Jamaika
+        * `JP` - Japan
+        * `YE` - Jemen
+        * `JE` - Jersey
+        * `JO` - Jordanien
+        * `KY` - Kaimaninseln
+        * `KH` - Kambodscha
+        * `CM` - Kamerun
+        * `CA` - Kanada
+        * `CV` - Kap Verde
+        * `KZ` - Kasachstan
+        * `QA` - Katar
+        * `KE` - Kenia
+        * `KG` - Kirgisistan
+        * `KI` - Kirivati
+        * `CC` - Kokosinseln (Keelinginseln)
+        * `CO` - Kolumbien
+        * `KM` - Komoren
+        * `CG` - Kongo
+        * `CD` - Kongo (Demokratische Republik)
+        * `HR` - Kroatien
+        * `CU` - Kuba
+        * `KW` - Kuwait
+        * `LA` - Laos, Demokratische Volksrepublik
+        * `LS` - Lesotho
+        * `LV` - Lettland
+        * `LB` - Libanon
+        * `LR` - Liberia
+        * `LY` - Libyen
+        * `LI` - Liechtenstein
+        * `LT` - Litauen
+        * `LU` - Luxemburg
+        * `MO` - Macao
+        * `MG` - Madagaskar
+        * `MW` - Malawi
+        * `MY` - Malaysia
+        * `MV` - Malediven
+        * `ML` - Mali
+        * `MT` - Malta
+        * `MA` - Marokko
+        * `MH` - Marshallinseln
+        * `MQ` - Martinique
+        * `MR` - Mauretanien
+        * `MU` - Mauritius
+        * `YT` - Mayotte
+        * `MK` - Mazedonien
+        * `MX` - Mexiko
+        * `FM` - Mikronesien (Föderierte Staaten von)
+        * `MD` - Moldawien
+        * `MC` - Monaco
+        * `MN` - Mongolei
+        * `ME` - Montenegro
+        * `MS` - Montserrat
+        * `MZ` - Mozambique
+        * `MM` - Myanmar
+        * `NA` - Namibia
+        * `NR` - Nauru
+        * `NP` - Nepal
+        * `NC` - Neukaledonien
+        * `NZ` - Neuseeland
+        * `NI` - Nicaragua
+        * `NL` - Niederlande
+        * `NE` - Niger
+        * `NG` - Nigeria
+        * `NU` - Niue
+        * `KP` - Nordkorea
+        * `NF` - Norfolkinsel
+        * `NO` - Norwegen
+        * `OM` - Oman
+        * `AT` - Österreich
+        * `TL` - Osttimor
+        * `PK` - Pakistan
+        * `PS` - Palästina
+        * `PW` - Palau
+        * `PA` - Panama
+        * `PG` - Papua Neu Guinea
+        * `PY` - Paraguay
+        * `PE` - Peru
+        * `PH` - Philippinen
+        * `PN` - Pitcairn
+        * `PL` - Polen
+        * `PT` - Portugal
+        * `PR` - Puerto Rico
+        * `RE` - Réunion
+        * `RW` - Ruanda
+        * `RO` - Rumänien
+        * `RU` - Russland
+        * `BL` - Saint-Barthélemy
+        * `PM` - Saint-Pierre und Miquelon
+        * `SB` - Salomonen
+        * `ZM` - Sambia
+        * `WS` - Samoa
+        * `SM` - San Marino
+        * `ST` - São Tomé und Príncipe
+        * `SA` - Saudi Arabien
+        * `SE` - Schweden
+        * `CH` - Schweiz
+        * `SN` - Senegal
+        * `RS` - Serbien
+        * `SC` - Seychellen
+        * `SL` - Sierra Leone
+        * `ZW` - Simbabwe
+        * `SG` - Singapur
+        * `SX` - Sint Maarten (niederländischer Teil)
+        * `SK` - Slowakei
+        * `SI` - Slowenien
+        * `SO` - Somalia
+        * `ES` - Spanien
+        * `SJ` - Spitzbergen und Jan Mayen
+        * `LK` - Sri Lanka
+        * `SH` - St. Helena, Ascension und Tristan da Cunha
+        * `KN` - St. Kitts und Nevis
+        * `LC` - St. Lucia
+        * `MF` - St. Martin (französischer Teil)
+        * `VC` - St. Vincent und die Grenadinen
+        * `ZA` - Südafrika
+        * `SD` - Sudan
+        * `GS` - Südgeorgien und die Südlichen Sandwichinseln
+        * `KR` - Südkorea
+        * `SS` - Südsudan
+        * `SR` - Surinam
+        * `SZ` - Swasiland
+        * `SY` - Syrien
+        * `TJ` - Tadschikistan
+        * `TW` - Taiwan (Provinz Chinas)
+        * `TZ` - Tansania
+        * `TH` - Thailand
+        * `TG` - Togo
+        * `TK` - Tokelau
+        * `TO` - Tonga
+        * `TT` - Trinidad und Tobago
+        * `TD` - Tschad
+        * `CZ` - Tschechien
+        * `TN` - Tunesien
+        * `TR` - Türkei
+        * `TM` - Turkmenistan
+        * `TC` - Turks- und Caicosinseln
+        * `TV` - Tuvalu
+        * `UM` - USA - Sonstige Kleine Inseln
+        * `UG` - Uganda
+        * `UA` - Ukraine
+        * `HU` - Ungarn
+        * `UY` - Uruguay
+        * `UZ` - Usbekistan
+        * `VU` - Vanuatu
+        * `VA` - Vatikanstadt
+        * `VE` - Venezuela (Bolivarische Republik)
+        * `AE` - Vereinigte Arabische Emirate
+        * `US` - Vereinigte Staaten von Amerika
+        * `GB` - Vereinigtes Königreich
+        * `VN` - Vietnam
+        * `WF` - Wallis und Futuna
+        * `CX` - Weihnachtsinsel
+        * `BY` - Weißrussland
+        * `EH` - Westsahara
+        * `CF` - Zentralafrikanische Republik
+        * `CY` - Zypern
+    CurrencyEnum:
+      enum:
+      - EUR
+      - USD
+      type: string
+      description: |-
+        * `EUR` - Euro
+        * `USD` - US Dollar
+    Debtor:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        person:
+          allOf:
+          - $ref: '#/components/schemas/Person'
+          description: If the debtor is a natural person or a single-person-business
+            please provide this object. In case of a single-person-business, please
+            set *acting_as* to *business*
+        organization:
+          allOf:
+          - $ref: '#/components/schemas/Organization'
+          description: If the debtor is an organization (no single-person-business),
+            please provide this object. For single-person-business debtors see the
+            *person* field.
+        acting_as:
+          description: |-
+            Tell us if the debtor is either a consumer or a business/other organization. Single-person-business debtors must have the value *business*
+
+            * `consumer` - Verbraucher
+            * `business` - Unternehmer
+          oneOf:
+          - $ref: '#/components/schemas/ActingAsEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        communication_channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommunicationChannel'
+        bank_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankAccount'
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/DebtorMetaData'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DebtorEvent'
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        updated:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - acting_as
+      - addresses
+      - created
+      - href
+      - updated
+    DebtorEvent:
+      type: object
+      description: Event for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/DebtorEventTypeEnum'
+        title:
+          type: string
+          maxLength: 255
+        occurence:
+          type: string
+          format: date-time
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - occurence
+      - title
+      - type
+    DebtorEventRequest:
+      type: object
+      description: Event for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/DebtorEventTypeEnum'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        occurence:
+          type: string
+          format: date-time
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        location:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - occurence
+      - title
+      - type
+    DebtorEventTypeEnum:
+      enum:
+      - registration
+      - login
+      - insolvency
+      type: string
+      description: |-
+        * `registration` - Registrierung
+        * `login` - Login
+        * `insolvency` - Insolvenz
+    DebtorMetaData:
+      type: object
+      description: Metadata for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/DebtorMetaDataTypeEnum'
+        value:
+          type: string
+          maxLength: 255
+      required:
+      - type
+      - value
+    DebtorMetaDataRequest:
+      type: object
+      description: Metadata for debtors
+      properties:
+        type:
+          $ref: '#/components/schemas/DebtorMetaDataTypeEnum'
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - type
+      - value
+    DebtorMetaDataTypeEnum:
+      enum:
+      - user:reference
+      - user:name
+      - user:ip
+      - user:language
+      type: string
+      description: |-
+        * `user:reference` - user:reference
+        * `user:name` - user:name
+        * `user:ip` - user:ip
+        * `user:language` - user:language
+    DebtorMinInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          readOnly: true
+      required:
+      - name
+    DebtorSerializerWithoutIdRequest:
+      type: object
+      properties:
+        your_reference:
+          type: string
+          nullable: true
+          maxLength: 255
+        person:
+          allOf:
+          - $ref: '#/components/schemas/PersonRequest'
+          description: If the debtor is a natural person or a single-person-business
+            please provide this object. In case of a single-person-business, please
+            set *acting_as* to *business*
+        organization:
+          allOf:
+          - $ref: '#/components/schemas/OrganizationRequest'
+          description: If the debtor is an organization (no single-person-business),
+            please provide this object. For single-person-business debtors see the
+            *person* field.
+        acting_as:
+          description: |-
+            Tell us if the debtor is either a consumer or a business/other organization. Single-person-business debtors must have the value *business*
+
+            * `consumer` - Verbraucher
+            * `business` - Unternehmer
+          oneOf:
+          - $ref: '#/components/schemas/ActingAsEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddressRequest'
+        communication_channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommunicationChannelRequest'
+        bank_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankAccountRequest'
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/DebtorMetaDataRequest'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/DebtorEventRequest'
+      required:
+      - acting_as
+      - addresses
+    Item:
+      type: object
+      description: Main claim items do not have fields occurence_date and document_date
+      properties:
+        description:
+          type: string
+          description: A description of the item.
+          maxLength: 1000
+        quantity:
+          type: number
+          format: double
+          description: The quantity of the item. Usually a number of pieces or hours.
+        unit:
+          type: string
+          nullable: true
+          description: 'The unit used to measure the quantity of the item. Examples
+            are: "pcs" ("pieces"), "hours", "kg" (kilograms)'
+          maxLength: 255
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          description: The amount invoices for the item ("Betrag des Rechnungspostens").
+      required:
+      - amount
+      - description
+      - quantity
+    ItemRequest:
+      type: object
+      description: Main claim items do not have fields occurence_date and document_date
+      properties:
+        description:
+          type: string
+          minLength: 1
+          description: A description of the item.
+          maxLength: 1000
+        quantity:
+          type: number
+          format: double
+          description: The quantity of the item. Usually a number of pieces or hours.
+        unit:
+          type: string
+          nullable: true
+          description: 'The unit used to measure the quantity of the item. Examples
+            are: "pcs" ("pieces"), "hours", "kg" (kilograms)'
+          maxLength: 255
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/AmountRequest'
+          description: The amount invoices for the item ("Betrag des Rechnungspostens").
+      required:
+      - amount
+      - description
+      - quantity
+    LegalClaimBalance:
+      type: object
+      properties:
+        balance_of_costs_interest_bearing:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The balance of the interest-bearing costs.
+        balance_of_costs_interest_free:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The balance of the interest-free costs.
+        balance_of_interest_on_costs:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The balance of the interest on the costs.
+        balance_of_interest_on_principal_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The balance of the interest on the principal claim.
+        balance_of_principal_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The balance of the principal claim.
+        total_balance:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The current total balance of the legal claim.
+        legal_claim_of_costs_interest_bearing:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The legal claim of costs interest bearing.
+        legal_claim_of_costs_interest_free:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The legal claim of interest free costs.
+        legal_claim_of_interest_on_costs:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The legal claim of interests on costs.
+        legal_claim_of_interest_on_principal_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The legal claim of interests on principal claim.
+        legal_claim_of_principal_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The legal claim of principal claim.
+        total_legal_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The total amount of the legal claim.
+        payment_on_costs_interest_bearing:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The debtor's payment on interest-bearing costs.
+        payment_on_costs_interest_free:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The debtor's payment on interest-free costs.
+        payment_on_interest_on_costs:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The debtor's payment on interests on costs.
+        payment_on_interest_on_principal_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The debtor's payment on the principal claim's interest.
+        payment_on_principal_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The debtor's payment on the principal claim.
+        total_payment:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The total of payments on the legal claim.
+        updated:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - balance_of_costs_interest_bearing
+      - balance_of_costs_interest_free
+      - balance_of_interest_on_costs
+      - balance_of_interest_on_principal_claim
+      - balance_of_principal_claim
+      - legal_claim_of_costs_interest_bearing
+      - legal_claim_of_costs_interest_free
+      - legal_claim_of_interest_on_costs
+      - legal_claim_of_interest_on_principal_claim
+      - legal_claim_of_principal_claim
+      - payment_on_costs_interest_bearing
+      - payment_on_costs_interest_free
+      - payment_on_interest_on_costs
+      - payment_on_interest_on_principal_claim
+      - payment_on_principal_claim
+      - total_balance
+      - total_legal_claim
+      - total_payment
+      - updated
+    LegalStageEnum:
+      enum:
+      - extrajudicial
+      - judicial_dunning
+      - foreclosure
+      - long_term_monitoring
+      - ended
+      type: string
+      description: |-
+        * `extrajudicial` - Außergerichtlich
+        * `judicial_dunning` - Gerichtliches Mahnverfahren
+        * `foreclosure` - Zwangsvollstreckung
+        * `long_term_monitoring` - In Langzeitüberwachung
+        * `ended` - Beendet
+    Mandate:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+        reference_number:
+          type: string
+          description: Our case file reference number ("Aktenzeichen").<br><br>**Note:**
+            Usually a mandate bears only one reference number. But there are edge
+            cases where a mandate is assigned multiple reference numbers. If a new
+            reference number is added to the mandate, this field is overwritten with
+            the new reference number. This previous reference number is then added
+            to the array of *further_reference_numbers*. See field below.
+        further_reference_numbers:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+          description: If a mandate bears multiple reference numbers, the most recent
+            one is saved in *reference_number* above. All others will be placed here.
+        debtor:
+          $ref: '#/components/schemas/DebtorMinInfo'
+        legal_stage:
+          allOf:
+          - $ref: '#/components/schemas/LegalStageEnum'
+          readOnly: true
+        processing_state:
+          allOf:
+          - $ref: '#/components/schemas/ProcessingStateEnum'
+          readOnly: true
+        payment_state:
+          allOf:
+          - $ref: '#/components/schemas/PaymentStateEnum'
+          readOnly: true
+        legal_claim_balance:
+          allOf:
+          - $ref: '#/components/schemas/LegalClaimBalance'
+          description: The legal claim balance of the mandate ("Forderungsstand").
+        claims:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimMinInfo'
+        total_mandate_amount:
+          $ref: '#/components/schemas/Amount'
+        status_updates:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdates'
+        archived:
+          type: boolean
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - archived
+      - created
+      - debtor
+      - href
+      - legal_claim_balance
+      - legal_stage
+      - payment_state
+      - processing_state
+      - status_updates
+      - total_mandate_amount
+    MandateMinInfo:
+      type: object
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+        reference_number:
+          type: string
+          description: Our case file reference number ("Aktenzeichen").
+      required:
+      - href
+    MandateMinInfoRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        reference_number:
+          type: string
+          minLength: 1
+          description: Our case file reference number ("Aktenzeichen").
+    ObligationFulfilledEnum:
+      enum:
+      - true
+      - false
+      type: boolean
+      description: |-
+        * `True` - Ja
+        * `False` - Nein
+    Organization:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - name
+    OrganizationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - name
+    PaginatedClaimList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Claim'
+    PaginatedDebtorList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Debtor'
+    PaginatedMandateList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mandate'
+    PaginatedPaymentList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+    PatchedMandateArchiveRequest:
+      type: object
+      properties:
+        archived:
+          type: boolean
+    PatchedReleaseClaimForProcessingRequest:
+      type: object
+      properties:
+        submission_state:
+          oneOf:
+          - $ref: '#/components/schemas/SubmissionStateEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+    Payment:
+      type: object
+      description: A payment associated for a claim
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+        claim:
+          type: string
+          format: uuid
+          description: The ID of the claim the payment should be reported on.
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          description: The amount of the payment.
+        value_date:
+          type: string
+          format: date
+          description: The value date of the payment.
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMetaData'
+          description: The metadata object allows you to submit additional relevant
+            information related to the payment as type/value pairs. You can submit
+            an unlimited number of metadata sets.
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount
+      - claim
+      - created
+      - href
+      - value_date
+    PaymentMetaData:
+      type: object
+      description: Metadata for payments
+      properties:
+        type:
+          $ref: '#/components/schemas/PaymentMetaDataTypeEnum'
+        value:
+          type: string
+          maxLength: 255
+      required:
+      - type
+      - value
+    PaymentMetaDataRequest:
+      type: object
+      description: Metadata for payments
+      properties:
+        type:
+          $ref: '#/components/schemas/PaymentMetaDataTypeEnum'
+        value:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - type
+      - value
+    PaymentMetaDataTypeEnum:
+      enum:
+      - comment
+      - invoice:reference
+      - invoice:update_and_capture
+      - transaction:reference
+      - contract:reference
+      - report:reference
+      - contravention:reference
+      type: string
+      description: |-
+        * `comment` - comment
+        * `invoice:reference` - invoice:reference
+        * `invoice:update_and_capture` - invoice:update_and_capture
+        * `transaction:reference` - transaction:reference
+        * `contract:reference` - contract:reference
+        * `report:reference` - report:reference
+        * `contravention:reference` - contravention:reference
+    PaymentMinInfo:
+      type: object
+      description: Only gives the payment's ids and href
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+      required:
+      - href
+    PaymentSerializerWithoutIdRequest:
+      type: object
+      description: A payment associated for a claim
+      properties:
+        claim:
+          type: string
+          format: uuid
+          description: The ID of the claim the payment should be reported on.
+        your_reference:
+          type: string
+          nullable: true
+          description: Your unique reference.
+          maxLength: 255
+        amount:
+          allOf:
+          - $ref: '#/components/schemas/AmountRequest'
+          description: The amount of the payment.
+        value_date:
+          type: string
+          format: date
+          description: The value date of the payment.
+        metadata:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMetaDataRequest'
+          description: The metadata object allows you to submit additional relevant
+            information related to the payment as type/value pairs. You can submit
+            an unlimited number of metadata sets.
+      required:
+      - amount
+      - claim
+      - value_date
+    PaymentStateEnum:
+      enum:
+      - unpaid
+      - partially_paid
+      - fully_paid
+      type: string
+      description: |-
+        * `unpaid` - Unbezahlt
+        * `partially_paid` - Teilweise bezahlt
+        * `fully_paid` - Voll bezahlt
+    Person:
+      type: object
+      properties:
+        salutation:
+          type: string
+          nullable: true
+          maxLength: 100
+        first_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        last_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        death_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - first_name
+      - last_name
+    PersonRequest:
+      type: object
+      properties:
+        salutation:
+          type: string
+          nullable: true
+          maxLength: 100
+        first_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        last_name:
+          type: string
+          nullable: true
+          maxLength: 255
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        death_date:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - first_name
+      - last_name
+    ProcessingStateEnum:
+      enum:
+      - in_progress
+      - paused
+      - client_response_pending
+      - canceled_by_client
+      - canceled_by_service_provider
+      - ended
+      type: string
+      description: |-
+        * `in_progress` - Laufend
+        * `paused` - Pausiert
+        * `client_response_pending` - Warte auf Mandantenantwort
+        * `canceled_by_client` - Abgebrochen durch Mandant
+        * `canceled_by_service_provider` - Abgebrochen durch uns
+        * `ended` - Beendet
+    StartingApproachEnum:
+      enum:
+      - extrajudicial
+      - judicial
+      type: string
+      description: |-
+        * `extrajudicial` - Zunächst außergerichtlich starten
+        * `judicial` - Gleich Mahnbescheid beantragen
+    StatusUpdates:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+          nullable: true
+          title: Text
+        legal_stage:
+          allOf:
+          - $ref: '#/components/schemas/LegalStageEnum'
+          readOnly: true
+        processing_state:
+          allOf:
+          - $ref: '#/components/schemas/ProcessingStateEnum'
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created
+      - description
+      - legal_stage
+      - processing_state
+      - title
+    SubmissionStateEnum:
+      enum:
+      - created
+      - released
+      - under_review
+      - client_response_pending
+      - accepted
+      - rejected
+      type: string
+      description: |-
+        * `created` - Created
+        * `released` - Released for processing
+        * `under_review` - Under review
+        * `client_response_pending` - Pending client response
+        * `accepted` - Accepted
+        * `rejected` - Rejected
+    UploadedDocument:
+      type: object
+      properties:
+        id:
+          type: string
+        mime_type:
+          type: string
+          readOnly: true
+          nullable: true
+        filename:
+          type: string
+      required:
+      - filename
+      - mime_type
+    UploadedDocumentFileUploadRequest:
+      type: object
+      description: Only used for claim document upload
+      properties:
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+          description: A document to upload. Allowed formats are pdf, jpeg and png.
+            Should use multipart/form-data encoding (RFC 2388).
+      required:
+      - file
+    UploadedDocumentRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        file:
+          type: string
+          format: binary
+          writeOnly: true
+          description: A document to upload. Allowed formats are PDF, JPEG and PNG.
+            Should use multipart/form-data protocol (RFC 2388).
+        filename:
+          type: string
+          minLength: 1
+      required:
+      - file
+      - filename
+  securitySchemes:
+    tokenAuth:
+      type: http
+      scheme: bearer
+servers:
+- url: https://api.paywise.de
+  description: Production environment
+externalDocs:
+  url: https://docs.paywise.de/api-docs/case-management-api/

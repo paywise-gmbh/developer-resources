@@ -1,0 +1,21 @@
+{
+	"id": "0d198fcd-1d3c-4e04-bdbc-f2d247c462dc",
+	"name": "Paywise API prod",
+	"values": [
+		{
+			"key": "baseUrl",
+			"value": "http://api.paywise.de",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "bearerToken",
+			"value": "<your-token-goes-here>",
+			"type": "secret",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2024-10-07T13:49:42.954Z",
+	"_postman_exported_using": "Postman/11.14.0"
+}
