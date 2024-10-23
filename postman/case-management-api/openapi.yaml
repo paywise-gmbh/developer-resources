@@ -47,7 +47,7 @@ info:
 
     To test the connection, generate a test token and execute:
 
-        $ curl -X GET https://api.paywise.de/v1/claims/ -H 'Authorization: Bearer YOUR_TOKEN'
+        $ curl -X GET https://api.paywise.de/v1/info/ -H 'Authorization: Bearer YOUR_TOKEN'
 
 
     [ref7]: https://app.paywise.de/account/manage-api/manage-auth-tokens/
@@ -131,6 +131,7 @@ paths:
       tags:
       - claims
       security:
+      - tokenAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -360,6 +361,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - tokenAuth: []
       responses:
         '201':
           content:
@@ -382,6 +384,7 @@ paths:
       tags:
       - claims
       security:
+      - tokenAuth: []
       - tokenAuth: []
       responses:
         '200':
@@ -423,6 +426,7 @@ paths:
               $ref: '#/components/schemas/PatchedReleaseClaimForProcessingRequest'
       security:
       - tokenAuth: []
+      - tokenAuth: []
       responses:
         '200':
           content:
@@ -457,6 +461,7 @@ paths:
               $ref: '#/components/schemas/UploadedDocumentFileUploadRequest'
         required: true
       security:
+      - tokenAuth: []
       - tokenAuth: []
       responses:
         '201':
@@ -696,6 +701,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Debtor'
+          description: ''
+  /v1/info/:
+    get:
+      operationId: get-user-info
+      summary: Get User Info
+      description: Get Info about the currently used authentication token and user.
+        Useful for testing your authentication.
+      tags:
+      - info
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenInfo'
           description: ''
   /v1/mandates/:
     get:
@@ -3665,6 +3689,11 @@ components:
           oneOf:
           - $ref: '#/components/schemas/SubmissionStateEnum'
           - $ref: '#/components/schemas/BlankEnum'
+        send_order_confirmation:
+          type: boolean
+          default: false
+          description: Indicates whether you want to receive an order entry Email
+            ('Eingangsbestätigung')
     Payment:
       type: object
       description: A payment associated for a claim
@@ -3929,6 +3958,21 @@ components:
         * `client_response_pending` - Pending client response
         * `accepted` - Accepted
         * `rejected` - Rejected
+    TokenInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        token_name:
+          type: string
+        user:
+          type: string
+        user_first_name:
+          type: string
+        user_last_name:
+          type: string
+        access_mode:
+          type: string
     UploadedDocument:
       type: object
       properties:
