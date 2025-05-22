@@ -4,53 +4,11 @@ info:
   version: v1
   description: |2
 
-    Use our API to submit claims to our debt collection service, manage debtors and get status updates on running mandates.
+    Use our API to create and manage companies & users.
 
-    ## Workflow
-    A typical workflow looks like this:
+    Please refer to the [official docs][ref1] for more!
 
-
-
-    1. [Create a debtor][ref1]
-
-    2. [Create a claim][ref2] that is linked to the debtor
-
-    3. Optionally [upload documents to the claim][ref3]
-
-    4. [Release the claim for processing][ref4] by setting the claim's *submission_state* field to *released*
-
-    5. Wait for the claim to be accepted. When a claim is accepted, it is added to a [mandate][ref5] and the claim's *submission_state* is set to *accepted*.
-
-       To do so, periodically check the claim's *submission_state* and *mandate* fields.
-
-    6. Periodically [check the claim's status updates][ref6] to get informed about any progress in the claim collection process
-
-    7. [Report any (partial) payments][ref7] for a claim which you directly received from your debtor
-
-
-    [ref1]: #tag/debtors/operation/Create%20a%20debtor
-    [ref2]: #tag/claims/operation/Create%20a%20claim
-    [ref3]: #tag/claims/operation/Upload%20a%20document%20to%20a%20claim
-    [ref4]: #tag/claims/operation/Release%20claim%20for%20processing
-    [ref5]: #tag/mandates/operation/List%20all%20mandates
-    [ref6]: #tag/mandates/operation/List%20status%20updates
-    [ref7]: #tag/payments/operation/Create%20a%20payment
-
-    ## Authentication
-    Authenticate your account when using the API by including your secret API key in the request.
-
-    Include your secret API key in the request to authenticate.
-
-    * There are separate token types for **test** and **production** environments. Always start with test keys first.
-    * [Manage your API-Tokens here][ref7]
-    * Use <code>Authorization: Bearer YOUR_TOKEN</code> in your request header.
-
-    To test the connection, generate a test token and execute:
-
-        $ curl -X GET https://api.paywise.de/v1/info/ -H 'Authorization: Bearer YOUR_TOKEN'
-
-
-    [ref7]: https://app.paywise.de/account/manage-api/manage-auth-tokens/
+    [ref1]: https://docs.paywise.de/api-docs/case-management-api/introduction
 paths:
   /v1/claims/:
     get:
@@ -250,13 +208,6 @@ paths:
     post:
       operationId: create-claim
       summary: Create a claim
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
       tags:
       - claims
       requestBody:
@@ -704,10 +655,7 @@ paths:
           description: ''
   /v1/info/:
     get:
-      operationId: get-user-info
-      summary: Get User Info
-      description: Get Info about the currently used authentication token and user.
-        Useful for testing your authentication.
+      operationId: info_list
       tags:
       - info
       security:
@@ -911,6 +859,7 @@ paths:
       - payments
       security:
       - tokenAuth: []
+      - tokenAuth: []
       responses:
         '200':
           content:
@@ -953,6 +902,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - tokenAuth: []
       responses:
         '201':
           content:
@@ -975,12 +925,511 @@ paths:
       - payments
       security:
       - tokenAuth: []
+      - tokenAuth: []
       responses:
         '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
+          description: ''
+  /v1/statements/:
+    get:
+      operationId: Get User Info
+      description: Get Info about the currently used authentication token and user.
+        Useful for testing your authentication.
+      summary: List statements
+      parameters:
+      - in: query
+        name: booking_date
+        schema:
+          type: string
+          format: date
+        description: Filter by the booking date of the statement
+      - in: query
+        name: canceled
+        schema:
+          type: boolean
+        description: Filter by the canceled status of the statement
+      - in: query
+        name: clearing_no
+        schema:
+          type: string
+        description: Filter by the clearing number of the statement
+      - in: query
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Filter by the UUID of the statement
+      - in: query
+        name: invoice_no
+        schema:
+          type: string
+        description: Filter by the invoice number of the statement
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: mandate_reference
+        schema:
+          type: string
+        description: Filter by the reference number of a mandate included in the statement
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: period_end
+        schema:
+          type: string
+          format: date
+        description: Filter by the period end date of the statement
+      - in: query
+        name: period_start
+        schema:
+          type: string
+          format: date
+        description: Filter by the period start date of the statement
+      tags:
+      - statements
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStatementList'
+              examples:
+                Example:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?offset=400&limit=100
+                    previous: http://api.example.org/accounts/?offset=200&limit=100
+                    results:
+                    - href: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/
+                      id: b12e4567-e89b-12d3-a456-426614174000
+                      clearing_no: AB123456789
+                      invoice_no: PW2023-12345
+                      total_balance:
+                        value: '500.00'
+                        currency: EUR
+                      balance_pre_outstanding_items_offsetting:
+                        value: '500.00'
+                        currency: EUR
+                      offset_outstanding_items:
+                        value: '0.00'
+                        currency: EUR
+                      overview_vat_specific:
+                      - vat_rate: '19.00'
+                        claims_from_payments_to_dca:
+                          taxfree_expenses_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxable_expenses_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxable_expenses_vat_claims:
+                            value: '0.00'
+                            currency: EUR
+                          fee_claims:
+                            value: '52.92'
+                            currency: EUR
+                          fee_vat_claims:
+                            value: '10.05'
+                            currency: EUR
+                          success_commission_claims:
+                            value: '2.85'
+                            currency: EUR
+                          success_commission_vat_claims:
+                            value: '0.54'
+                            currency: EUR
+                        claims_from_payments_to_client:
+                          taxfree_expenses_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxable_expenses_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxable_expenses_vat_claims:
+                            value: '0.00'
+                            currency: EUR
+                          fee_claims:
+                            value: '0.00'
+                            currency: EUR
+                          fee_vat_claims:
+                            value: '0.00'
+                            currency: EUR
+                          success_commission_claims:
+                            value: '4.17'
+                            currency: EUR
+                          success_commission_vat_claims:
+                            value: '0.79'
+                            currency: EUR
+                        claims_from_advanced_costs:
+                          taxfree_expenses_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxable_expenses_claims:
+                            value: '15.00'
+                            currency: EUR
+                          taxable_expenses_vat_claims:
+                            value: '2.85'
+                            currency: EUR
+                          fee_claims:
+                            value: '0.00'
+                            currency: EUR
+                          fee_vat_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxfree_litigation_expenses_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxable_litigation_expenses_claims:
+                            value: '0.00'
+                            currency: EUR
+                          taxable_litigation_expenses_vat_claims:
+                            value: '0.00'
+                            currency: EUR
+                        vat:
+                          value: '14.23'
+                          currency: EUR
+                        invoice_amount:
+                          value: '74.90'
+                          currency: EUR
+                        invoice_amount_vat:
+                          value: '14.23'
+                          currency: EUR
+                        payout:
+                          value: '437.92'
+                          currency: EUR
+                      mandate_details:
+                      - reference_number: ABC-123456
+                        mandate:
+                          href: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/
+                          id: 5600672e-2bfa-488c-b23a-460c1dd1f833
+                          reference_number: ABC-123456
+                        closing:
+                          closing_date: '2023-07-11'
+                          closing_code: IN001
+                          closing_description: Claim fully collected
+                          closing_type: positive
+                          accepted_main_claim_amount:
+                            value: '500.00'
+                            currency: EUR
+                          remaining_main_claim_amount:
+                            value: '89.13'
+                            currency: EUR
+                        third_party_money_entries:
+                        - vat_rate: '19.00'
+                          third_party_money:
+                            vat_rate: '19.00'
+                            total_payments:
+                              value: '500.00'
+                              currency: EUR
+                            payments_to_dca:
+                              total_payments:
+                                value: '327.09'
+                                currency: EUR
+                              allocation_to_fee:
+                                value: '52.92'
+                                currency: EUR
+                              allocation_to_fee_vat:
+                                value: '10.05'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '271.32'
+                                currency: EUR
+                              allocation_to_default_interest:
+                                value: '2.85'
+                                currency: EUR
+                              allocation_to_success_commission:
+                                value: '2.85'
+                                currency: EUR
+                              allocation_to_success_commission_vat:
+                                value: '0.54'
+                                currency: EUR
+                              payout:
+                                value: '260.73'
+                                currency: EUR
+                            payments_to_client:
+                              total_payments:
+                                value: '100.00'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '95.83'
+                                currency: EUR
+                              allocation_to_success_commission:
+                                value: '4.17'
+                                currency: EUR
+                              allocation_to_success_commission_vat:
+                                value: '0.79'
+                                currency: EUR
+                              payout:
+                                value: '95.83'
+                                currency: EUR
+                            extraordinary_payouts_to_client:
+                              total_payments:
+                                value: '72.91'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '72.91'
+                                currency: EUR
+                              payout:
+                                value: '72.91'
+                                currency: EUR
+                        cost_burden_entries:
+                        - vat_rate: '19.00'
+                          cost_burden:
+                            vat_rate: '19.00'
+                            fee:
+                              value: '74.90'
+                              currency: EUR
+                            fee_vat:
+                              value: '14.23'
+                              currency: EUR
+                            total_amount:
+                              value: '89.13'
+                              currency: EUR
+                      booking_date: '2023-07-15'
+                      period_start: '2023-06-01'
+                      period_end: '2023-06-30'
+                      canceled: false
+                      comment: Monthly statement for debt collection services
+                      downloads:
+                        pdf: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/pdf/
+                        third_party_money: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/third-party-money/
+                        cost_burden: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/cost-burden/
+                        closing: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/closing/
+                      created: '2023-07-15T10:23:45.678901Z'
+          description: ''
+  /v1/statements/{id}/:
+    get:
+      operationId: get-statement
+      description: Retrieve a single statement (invoice) by its ID.
+      summary: Retrieve a statement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - statements
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Statement'
+              examples:
+                Example:
+                  value:
+                    href: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/
+                    id: b12e4567-e89b-12d3-a456-426614174000
+                    clearing_no: AB123456789
+                    invoice_no: PW2023-12345
+                    total_balance:
+                      value: '500.00'
+                      currency: EUR
+                    balance_pre_outstanding_items_offsetting:
+                      value: '500.00'
+                      currency: EUR
+                    offset_outstanding_items:
+                      value: '0.00'
+                      currency: EUR
+                    overview_vat_specific:
+                    - vat_rate: '19.00'
+                      claims_from_payments_to_dca:
+                        taxfree_expenses_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxable_expenses_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxable_expenses_vat_claims:
+                          value: '0.00'
+                          currency: EUR
+                        fee_claims:
+                          value: '52.92'
+                          currency: EUR
+                        fee_vat_claims:
+                          value: '10.05'
+                          currency: EUR
+                        success_commission_claims:
+                          value: '2.85'
+                          currency: EUR
+                        success_commission_vat_claims:
+                          value: '0.54'
+                          currency: EUR
+                      claims_from_payments_to_client:
+                        taxfree_expenses_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxable_expenses_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxable_expenses_vat_claims:
+                          value: '0.00'
+                          currency: EUR
+                        fee_claims:
+                          value: '0.00'
+                          currency: EUR
+                        fee_vat_claims:
+                          value: '0.00'
+                          currency: EUR
+                        success_commission_claims:
+                          value: '4.17'
+                          currency: EUR
+                        success_commission_vat_claims:
+                          value: '0.79'
+                          currency: EUR
+                      claims_from_advanced_costs:
+                        taxfree_expenses_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxable_expenses_claims:
+                          value: '15.00'
+                          currency: EUR
+                        taxable_expenses_vat_claims:
+                          value: '2.85'
+                          currency: EUR
+                        fee_claims:
+                          value: '0.00'
+                          currency: EUR
+                        fee_vat_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxfree_litigation_expenses_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxable_litigation_expenses_claims:
+                          value: '0.00'
+                          currency: EUR
+                        taxable_litigation_expenses_vat_claims:
+                          value: '0.00'
+                          currency: EUR
+                      vat:
+                        value: '14.23'
+                        currency: EUR
+                      invoice_amount:
+                        value: '74.90'
+                        currency: EUR
+                      invoice_amount_vat:
+                        value: '14.23'
+                        currency: EUR
+                      payout:
+                        value: '437.92'
+                        currency: EUR
+                    mandate_details:
+                    - reference_number: ABC-123456
+                      mandate:
+                        href: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/
+                        id: 5600672e-2bfa-488c-b23a-460c1dd1f833
+                        reference_number: ABC-123456
+                      closing:
+                        closing_date: '2023-07-11'
+                        closing_code: IN001
+                        closing_description: Claim fully collected
+                        closing_type: positive
+                        accepted_main_claim_amount:
+                          value: '500.00'
+                          currency: EUR
+                        remaining_main_claim_amount:
+                          value: '89.13'
+                          currency: EUR
+                      third_party_money_entries:
+                      - vat_rate: '19.00'
+                        third_party_money:
+                          vat_rate: '19.00'
+                          total_payments:
+                            value: '500.00'
+                            currency: EUR
+                          payments_to_dca:
+                            total_payments:
+                              value: '327.09'
+                              currency: EUR
+                            allocation_to_fee:
+                              value: '52.92'
+                              currency: EUR
+                            allocation_to_fee_vat:
+                              value: '10.05'
+                              currency: EUR
+                            allocation_to_main_claim:
+                              value: '271.32'
+                              currency: EUR
+                            allocation_to_default_interest:
+                              value: '2.85'
+                              currency: EUR
+                            allocation_to_success_commission:
+                              value: '2.85'
+                              currency: EUR
+                            allocation_to_success_commission_vat:
+                              value: '0.54'
+                              currency: EUR
+                            payout:
+                              value: '260.73'
+                              currency: EUR
+                          payments_to_client:
+                            total_payments:
+                              value: '100.00'
+                              currency: EUR
+                            allocation_to_main_claim:
+                              value: '95.83'
+                              currency: EUR
+                            allocation_to_success_commission:
+                              value: '4.17'
+                              currency: EUR
+                            allocation_to_success_commission_vat:
+                              value: '0.79'
+                              currency: EUR
+                            payout:
+                              value: '95.83'
+                              currency: EUR
+                          extraordinary_payouts_to_client:
+                            total_payments:
+                              value: '72.91'
+                              currency: EUR
+                            allocation_to_main_claim:
+                              value: '72.91'
+                              currency: EUR
+                            payout:
+                              value: '72.91'
+                              currency: EUR
+                      cost_burden_entries:
+                      - vat_rate: '19.00'
+                        cost_burden:
+                          vat_rate: '19.00'
+                          fee:
+                            value: '74.90'
+                            currency: EUR
+                          fee_vat:
+                            value: '14.23'
+                            currency: EUR
+                          total_amount:
+                            value: '89.13'
+                            currency: EUR
+                    booking_date: '2023-07-15'
+                    period_start: '2023-06-01'
+                    period_end: '2023-06-30'
+                    canceled: false
+                    comment: Monthly statement for debt collection services
+                    downloads:
+                      pdf: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/pdf/
+                      third_party_money: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/third-party-money/
+                      cost_burden: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/cost-burden/
+                      closing: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/closing/
+                    created: '2023-07-15T10:23:45.678901Z'
           description: ''
 components:
   schemas:
@@ -1055,7 +1504,7 @@ components:
       - your_reference
     AdditionalChargeEvent:
       type: object
-      description: Event for debtors
+      description: Base class for events. Subclassed by other serializers.
       properties:
         type:
           $ref: '#/components/schemas/AdditionalChargeEventTypeEnum'
@@ -1083,7 +1532,7 @@ components:
       - type
     AdditionalChargeEventRequest:
       type: object
-      description: Event for debtors
+      description: Base class for events. Subclassed by other serializers.
       properties:
         type:
           $ref: '#/components/schemas/AdditionalChargeEventTypeEnum'
@@ -2011,7 +2460,7 @@ components:
         * `False` - Nein
     ClaimEvent:
       type: object
-      description: Event for claims
+      description: Base class for events. Subclassed by other serializers.
       properties:
         type:
           $ref: '#/components/schemas/ClaimEventTypeEnum'
@@ -2039,7 +2488,7 @@ components:
       - type
     ClaimEventRequest:
       type: object
-      description: Event for claims
+      description: Base class for events. Subclassed by other serializers.
       properties:
         type:
           $ref: '#/components/schemas/ClaimEventTypeEnum'
@@ -2495,6 +2944,44 @@ components:
       - subject_matter
       - total_claim_amount
       - your_reference
+    Closing:
+      type: object
+      description: Serializer for closing information
+      properties:
+        closing_date:
+          type: string
+          format: date
+          readOnly: true
+          description: The date of the closing.
+        closing_code:
+          type: string
+          readOnly: true
+          description: The code of the closing.
+        closing_description:
+          type: string
+          readOnly: true
+          description: Description of the closing.
+        closing_type:
+          type: string
+          readOnly: true
+          description: Type of the closing (positive, negative, transition_to_longtime_monitoring).
+        accepted_main_claim_amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The accepted main claim amount.
+        remaining_main_claim_amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The remaining main claim amount.
+      required:
+      - accepted_main_claim_amount
+      - closing_code
+      - closing_date
+      - closing_description
+      - closing_type
+      - remaining_main_claim_amount
     CommunicationChannel:
       type: object
       properties:
@@ -2552,6 +3039,91 @@ components:
         * `social_various` - Anderes Social Medium
         * `website_url` - Website URL
         * `web_various` - Andere Web-Quelle
+    CostBurden:
+      type: object
+      description: Serializer for cost burden information
+      properties:
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The VAT rate applied to this entry.
+        tax_free_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Tax-free expenses burden.
+        taxable_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Taxable expenses burden.
+        taxable_expenses_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: VAT on taxable expenses burden.
+        fee:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Fee burden.
+        fee_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: VAT on fee burden.
+        litigation_taxfree_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Tax-free litigation expenses burden.
+        litigation_taxable_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Taxable litigation expenses burden.
+        litigation_taxable_expenses_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: VAT on taxable litigation expenses burden.
+        total_amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Total cost burden amount.
+      required:
+      - fee
+      - fee_vat
+      - litigation_taxable_expenses
+      - litigation_taxable_expenses_vat
+      - litigation_taxfree_expenses
+      - tax_free_expenses
+      - taxable_expenses
+      - taxable_expenses_vat
+      - total_amount
+      - vat_rate
+    CostBurdenEntry:
+      type: object
+      description: Serializer for linking cost burden to a mandate detail with specific
+        VAT rate
+      properties:
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The VAT rate applied to this entry.
+        cost_burden:
+          allOf:
+          - $ref: '#/components/schemas/CostBurden'
+          readOnly: true
+          description: Cost burden information.
+      required:
+      - cost_burden
+      - vat_rate
     CountryEnum:
       enum:
       - AF
@@ -3132,7 +3704,7 @@ components:
       - updated
     DebtorEvent:
       type: object
-      description: Event for debtors
+      description: Base class for events. Subclassed by other serializers.
       properties:
         type:
           $ref: '#/components/schemas/DebtorEventTypeEnum'
@@ -3160,7 +3732,7 @@ components:
       - type
     DebtorEventRequest:
       type: object
-      description: Event for debtors
+      description: Base class for events. Subclassed by other serializers.
       properties:
         type:
           $ref: '#/components/schemas/DebtorEventTypeEnum'
@@ -3547,6 +4119,45 @@ components:
       - processing_state
       - status_updates
       - total_mandate_amount
+    MandateDetailMin:
+      type: object
+      description: Serializer for minimal mandate detail information
+      properties:
+        reference_number:
+          type: string
+          readOnly: true
+          description: The reference number of the mandate related to this statement
+            detail.
+        mandate:
+          allOf:
+          - $ref: '#/components/schemas/MandateMinInfo'
+          readOnly: true
+          description: The mandate associated with this statement detail.
+        third_party_money_entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThirdPartyMoneyEntry'
+          readOnly: true
+          description: Details about third party money for this mandate with different
+            VAT rates (Fremdgeldabrechnung).
+        cost_burden_entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CostBurdenEntry'
+          readOnly: true
+          description: Details about cost burden for this mandate with different VAT
+            rates (Kostenbelastung).
+        closing:
+          allOf:
+          - $ref: '#/components/schemas/Closing'
+          readOnly: true
+          description: Closing information for this mandate (Abschlussmeldung).
+      required:
+      - closing
+      - cost_burden_entries
+      - mandate
+      - reference_number
+      - third_party_money_entries
     MandateMinInfo:
       type: object
       properties:
@@ -3677,6 +4288,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Payment'
+    PaginatedStatementList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Statement'
     PatchedMandateArchiveRequest:
       type: object
       properties:
@@ -3693,7 +4324,7 @@ components:
           type: boolean
           default: false
           description: Indicates whether you want to receive an order entry Email
-            ('Eingangsbestätigung')
+            ('Eingangsbest�tigung')
     Payment:
       type: object
       description: A payment associated for a claim
@@ -3891,7 +4522,6 @@ components:
       enum:
       - in_progress
       - paused
-      - client_response_pending
       - canceled_by_client
       - canceled_by_service_provider
       - ended
@@ -3899,7 +4529,6 @@ components:
       description: |-
         * `in_progress` - Laufend
         * `paused` - Pausiert
-        * `client_response_pending` - Warte auf Mandantenantwort
         * `canceled_by_client` - Abgebrochen durch Mandant
         * `canceled_by_service_provider` - Abgebrochen durch uns
         * `ended` - Beendet
@@ -3911,6 +4540,340 @@ components:
       description: |-
         * `extrajudicial` - Zunächst außergerichtlich starten
         * `judicial` - Gleich Mahnbescheid beantragen
+    Statement:
+      type: object
+      description: A statement (invoice) for debt collection services
+      properties:
+        href:
+          type: string
+          format: uri
+          readOnly: true
+        id:
+          type: string
+        clearing_no:
+          type: string
+          readOnly: true
+          description: The clearing number of the statement.
+        invoice_no:
+          type: string
+          readOnly: true
+          description: The invoice number of the statement.
+        booking_date:
+          type: string
+          format: date
+          readOnly: true
+          description: The date when the statement was booked.
+        period_start:
+          type: string
+          format: date
+          readOnly: true
+          description: The start date of the period covered by the statement.
+        period_end:
+          type: string
+          format: date
+          readOnly: true
+          description: The end date of the period covered by the statement.
+        canceled:
+          type: boolean
+          readOnly: true
+          description: Whether the statement has been canceled.
+        comment:
+          type: string
+          readOnly: true
+          description: Additional comment or notes on the statement.
+        total_balance:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Total balance after considering outstanding items.
+        balance_pre_outstanding_items_offsetting:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Saldo Inkassoverfahren: Payout before considering outstanding
+            items.'
+        offset_outstanding_items:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Amount of outstanding items that was offset.
+        overview_vat_specific:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatementVATEntry'
+          readOnly: true
+          description: VAT-specific financial details for this statement.
+        mandate_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/MandateDetailMin'
+          readOnly: true
+          description: Details about the mandates included in this statement.
+        downloads:
+          type: string
+          readOnly: true
+          description: URLs to download all available statement files (PDF and Excel
+            files).
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - balance_pre_outstanding_items_offsetting
+      - booking_date
+      - canceled
+      - clearing_no
+      - comment
+      - created
+      - downloads
+      - href
+      - invoice_no
+      - mandate_details
+      - offset_outstanding_items
+      - overview_vat_specific
+      - period_end
+      - period_start
+      - total_balance
+    StatementVATEntry:
+      type: object
+      description: Serializer for VAT-specific information in statements
+      properties:
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The VAT rate applied to this entry.
+        claims_from_payments_to_dca:
+          allOf:
+          - $ref: '#/components/schemas/StatementVATEntryClaimsFromPaymentsToDCA'
+          readOnly: true
+          description: Claims from payments to debt collection agency (Inkassoansprüche
+            aus Zahlungen ans IKU).
+        claims_from_payments_to_client:
+          allOf:
+          - $ref: '#/components/schemas/StatementVATEntryClaimsFromPaymentsToClient'
+          readOnly: true
+          description: Claims from payments to client (Inkassoansprüche aus Zahlungen
+            an Gläubiger).
+        claims_from_advanced_costs:
+          allOf:
+          - $ref: '#/components/schemas/StatementVATEntryClaimsFromAdvancedCosts'
+          readOnly: true
+          description: Claims from advanced costs (Inkassoansprüche aus verauslagten
+            Kosten).
+        vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The total VAT amount for this entry.
+        invoice_amount:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The invoice amount for this entry.
+        invoice_amount_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The VAT amount on the invoice for this entry.
+        total_payments_to_dca:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Total payments to the debt collection agency.
+        instalment_payments_to_client:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Instalment payments to the client.
+        payout:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The payout amount for this entry.
+      required:
+      - claims_from_advanced_costs
+      - claims_from_payments_to_client
+      - claims_from_payments_to_dca
+      - instalment_payments_to_client
+      - invoice_amount
+      - invoice_amount_vat
+      - payout
+      - total_payments_to_dca
+      - vat
+      - vat_rate
+    StatementVATEntryClaimsFromAdvancedCosts:
+      type: object
+      description: Serializer for ClaimsFromAdvancedCosts within VATEntry
+      properties:
+        taxfree_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Tax-Free Expenses (Inkassoansprüche
+            aus verauslagten Kosten: Steuerfreie Auslagen).'
+        taxable_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Taxable Expenses (Inkassoansprüche
+            aus verauslagten Kosten: Steuerpflichtige Auslagen).'
+        taxable_expenses_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Taxable Expenses VAT (Inkassoansprüche
+            aus verauslagten Kosten: Steuerpflichtige Auslagen Umsatzsteuer).'
+        fee_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Fee (Inkassoansprüche aus verauslagten
+            Kosten: Honorar).'
+        fee_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Fee VAT (Inkassoansprüche aus
+            verauslagten Kosten: Honorar Umsatzsteuer).'
+        taxfree_litigation_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Tax-Free Litigation Expenses (Inkassoansprüche
+            aus verauslagten Kosten: Steuerfreie Prozesskosten).'
+        taxable_litigation_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Taxable Litigation Expenses (Inkassoansprüche
+            aus verauslagten Kosten: Steuerpflichtige Prozesskosten).'
+        taxable_litigation_expenses_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Advanced Costs: Taxable Litigation Expenses VAT
+            (Inkassoansprüche aus verauslagten Kosten: Steuerpflichtige Prozesskosten
+            Umsatzsteuer).'
+      required:
+      - fee_claims
+      - fee_vat_claims
+      - taxable_expenses_claims
+      - taxable_expenses_vat_claims
+      - taxable_litigation_expenses_claims
+      - taxable_litigation_expenses_vat_claims
+      - taxfree_expenses_claims
+      - taxfree_litigation_expenses_claims
+    StatementVATEntryClaimsFromPaymentsToClient:
+      type: object
+      description: Serializer for ClaimsFromPaymentsToClient within VATEntry
+      properties:
+        taxfree_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Client: Tax-Free Expenses (Inkassoansprüche
+            aus Zahlungen an Gläubiger: Steuerfreie Auslagen).'
+        taxable_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Client: Taxable Expenses (Inkassoansprüche
+            aus Zahlungen an Gläubiger: Steuerpflichtige Auslagen).'
+        taxable_expenses_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Client: Taxable Expenses VAT (Inkassoansprüche
+            aus Zahlungen an Gläubiger: Steuerpflichtige Auslagen Umsatzsteuer).'
+        fee_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Client: Fee (Inkassoansprüche aus
+            Zahlungen an Gläubiger: Honorar).'
+        fee_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Client: Fee VAT (Inkassoansprüche
+            aus Zahlungen an Gläubiger: Honorar Umsatzsteuer).'
+        success_commission_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Client: Success Commission (Inkassoansprüche
+            aus Zahlungen an Gläubiger: Erfolgsprovision).'
+        success_commission_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Client: Success Commission VAT (Inkassoansprüche
+            aus Zahlungen ans Gläubiger: USt. auf Erfolgsprovision).'
+      required:
+      - fee_claims
+      - fee_vat_claims
+      - success_commission_claims
+      - success_commission_vat_claims
+      - taxable_expenses_claims
+      - taxable_expenses_vat_claims
+      - taxfree_expenses_claims
+    StatementVATEntryClaimsFromPaymentsToDCA:
+      type: object
+      description: Serializer for ClaimsFromPaymentsToDCA within VATEntry
+      properties:
+        taxfree_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Debt Collection Agency: Tax-Free Expenses
+            (Inkassoansprüche aus Zahlungen ans IKU: Steuerfreie Auslagen).'
+        taxable_expenses_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Debt Collection Agency: Taxable Expenses
+            (Inkassoansprüche aus Zahlungen ans IKU: Steuerpflichtige Auslagen).'
+        taxable_expenses_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Debt Collection Agency: Taxable Expenses
+            VAT (Inkassoansprüche aus Zahlungen ans IKU: Steuerpflichtige Auslagen
+            Umsatzsteuer).'
+        fee_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Debt Collection Agency: Fee (Inkassoansprüche
+            aus Zahlungen ans IKU: Honorar).'
+        fee_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Debt Collection Agency: Fee VAT (Inkassoansprüche
+            aus Zahlungen ans IKU: Honorar Umsatzsteuer).'
+        success_commission_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Debt Collection Agency: Success Commission
+            (Inkassoansprüche aus Zahlungen ans IKU: Erfolgsprovision).'
+        success_commission_vat_claims:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: 'Claims from Payments to Debt Collection Agency: Success Commission
+            VAT (Inkassoansprüche aus Zahlungen ans IKU: USt. auf Erfolgsprovision).'
+      required:
+      - fee_claims
+      - fee_vat_claims
+      - success_commission_claims
+      - success_commission_vat_claims
+      - taxable_expenses_claims
+      - taxable_expenses_vat_claims
+      - taxfree_expenses_claims
     StatusUpdates:
       type: object
       properties:
@@ -3958,6 +4921,349 @@ components:
         * `client_response_pending` - Pending client response
         * `accepted` - Accepted
         * `rejected` - Rejected
+    ThirdPartyMoney:
+      type: object
+      description: Serializer for third party money information
+      properties:
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The VAT rate applied to this entry.
+        total_payments:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Total payments from the debtor (both to agency and client).
+        payments_to_dca:
+          allOf:
+          - $ref: '#/components/schemas/ThirdPartyMoneyPaymentsToDCA'
+          readOnly: true
+          description: Details about payments to the debt collection agency.
+        payments_to_client:
+          allOf:
+          - $ref: '#/components/schemas/ThirdPartyMoneyPaymentsToClient'
+          readOnly: true
+          description: Details about payments to the client.
+        extraordinary_payouts_to_client:
+          allOf:
+          - $ref: '#/components/schemas/ThirdPartyMoneyExtraordinaryPayoutsToClient'
+          readOnly: true
+          description: Details about extraordinary payouts to the client.
+      required:
+      - extraordinary_payouts_to_client
+      - payments_to_client
+      - payments_to_dca
+      - total_payments
+      - vat_rate
+    ThirdPartyMoneyEntry:
+      type: object
+      description: Serializer for linking third party money to a mandate detail with
+        specific VAT rate
+      properties:
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          readOnly: true
+          description: The VAT rate applied to this entry.
+        third_party_money:
+          allOf:
+          - $ref: '#/components/schemas/ThirdPartyMoney'
+          readOnly: true
+          description: Third party money information.
+      required:
+      - third_party_money
+      - vat_rate
+    ThirdPartyMoneyExtraordinaryPayoutsToClient:
+      type: object
+      description: Serializer for extraordinary payouts to client
+      properties:
+        total_payments:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Total extraordinary payments to the client.
+        allocation_to_fee:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to fee from extraordinary payments to the client.
+        allocation_to_fee_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to fee VAT from extraordinary payments to the client.
+        allocation_to_client_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to client expenses from extraordinary payments to
+            the client.
+        allocation_to_client_costs:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to client costs from extraordinary payments to the
+            client.
+        allocation_to_main_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to main claim from extraordinary payments to the
+            client.
+        allocation_to_default_interest:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to default interest from extraordinary payments
+            to the client.
+        allocation_to_overpayment:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to overpayment from extraordinary payments to the
+            client.
+        allocation_to_tax_free_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to tax-free expenses from extraordinary payments
+            to the client.
+        allocation_to_taxable_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to taxable expenses from extraordinary payments
+            to the client.
+        allocation_to_taxable_expenses_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to taxable expenses VAT from extraordinary payments
+            to the client.
+        allocation_to_success_commission:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to success commission from extraordinary payments
+            to the client.
+        allocation_to_success_commission_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to success commission VAT from extraordinary payments
+            to the client.
+        payout:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The payout amount from extraordinary payments to the client.
+      required:
+      - allocation_to_client_costs
+      - allocation_to_client_expenses
+      - allocation_to_default_interest
+      - allocation_to_fee
+      - allocation_to_fee_vat
+      - allocation_to_main_claim
+      - allocation_to_overpayment
+      - allocation_to_success_commission
+      - allocation_to_success_commission_vat
+      - allocation_to_tax_free_expenses
+      - allocation_to_taxable_expenses
+      - allocation_to_taxable_expenses_vat
+      - payout
+      - total_payments
+    ThirdPartyMoneyPaymentsToClient:
+      type: object
+      description: Serializer for payments to client
+      properties:
+        total_payments:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Total payments from the debtor to the client.
+        allocation_to_fee:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to fee from payments to the client.
+        allocation_to_fee_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to fee VAT from payments to the client.
+        allocation_to_client_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to client expenses from payments to the client.
+        allocation_to_client_costs:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to client costs from payments to the client.
+        allocation_to_main_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to main claim from payments to the client.
+        allocation_to_default_interest:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to default interest from payments to the client.
+        allocation_to_overpayment:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to overpayment from payments to the client.
+        allocation_to_tax_free_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to tax-free expenses from payments to the client.
+        allocation_to_taxable_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to taxable expenses from payments to the client.
+        allocation_to_taxable_expenses_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to taxable expenses VAT from payments to the client.
+        allocation_to_success_commission:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to success commission from payments to the client.
+        allocation_to_success_commission_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to success commission VAT from payments to the client.
+        payout:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The payout amount from payments to the client.
+      required:
+      - allocation_to_client_costs
+      - allocation_to_client_expenses
+      - allocation_to_default_interest
+      - allocation_to_fee
+      - allocation_to_fee_vat
+      - allocation_to_main_claim
+      - allocation_to_overpayment
+      - allocation_to_success_commission
+      - allocation_to_success_commission_vat
+      - allocation_to_tax_free_expenses
+      - allocation_to_taxable_expenses
+      - allocation_to_taxable_expenses_vat
+      - payout
+      - total_payments
+    ThirdPartyMoneyPaymentsToDCA:
+      type: object
+      description: Serializer for payments to debt collection agency
+      properties:
+        total_payments:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Total payments from the debtor to the debt collection agency.
+        allocation_to_fee:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to fee from payments to the debt collection agency.
+        allocation_to_fee_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to fee VAT from payments to the debt collection
+            agency.
+        allocation_to_client_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to client expenses from payments to the debt collection
+            agency.
+        allocation_to_client_costs:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to client costs from payments to the debt collection
+            agency.
+        allocation_to_main_claim:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to main claim from payments to the debt collection
+            agency.
+        allocation_to_default_interest:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to default interest from payments to the debt collection
+            agency.
+        allocation_to_overpayment:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to overpayment from payments to the debt collection
+            agency.
+        allocation_to_tax_free_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to tax-free expenses from payments to the debt collection
+            agency.
+        allocation_to_taxable_expenses:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to taxable expenses from payments to the debt collection
+            agency.
+        allocation_to_taxable_expenses_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to taxable expenses VAT from payments to the debt
+            collection agency.
+        allocation_to_success_commission:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to success commission from payments to the debt
+            collection agency.
+        allocation_to_success_commission_vat:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: Allocation to success commission VAT from payments to the debt
+            collection agency.
+        payout:
+          allOf:
+          - $ref: '#/components/schemas/Amount'
+          readOnly: true
+          description: The payout amount from payments to the debt collection agency.
+      required:
+      - allocation_to_client_costs
+      - allocation_to_client_expenses
+      - allocation_to_default_interest
+      - allocation_to_fee
+      - allocation_to_fee_vat
+      - allocation_to_main_claim
+      - allocation_to_overpayment
+      - allocation_to_success_commission
+      - allocation_to_success_commission_vat
+      - allocation_to_tax_free_expenses
+      - allocation_to_taxable_expenses
+      - allocation_to_taxable_expenses_vat
+      - payout
+      - total_payments
     TokenInfo:
       type: object
       properties:
