@@ -655,7 +655,9 @@ paths:
           description: ''
   /v1/info/:
     get:
-      operationId: info_list
+      operationId: Get User Info
+      description: Get Info about the currently used authentication token and user.
+        Useful for testing your authentication.
       tags:
       - info
       security:
@@ -935,9 +937,13 @@ paths:
           description: ''
   /v1/statements/:
     get:
-      operationId: Get User Info
-      description: Get Info about the currently used authentication token and user.
-        Useful for testing your authentication.
+      operationId: list-statements
+      description: |-
+        List and filter your statements.
+
+        **Important:** The field *mandate_details* is not rendered in list view for performance reasons.
+
+        - To access the mandate details of a statement, use the separate list mandate details endpoint.
       summary: List statements
       parameters:
       - in: query
@@ -946,11 +952,6 @@ paths:
           type: string
           format: date
         description: Filter by the booking date of the statement
-      - in: query
-        name: canceled
-        schema:
-          type: boolean
-        description: Filter by the canceled status of the statement
       - in: query
         name: clearing_no
         schema:
@@ -974,7 +975,7 @@ paths:
         schema:
           type: integer
       - in: query
-        name: mandate_reference
+        name: mandate_reference_number
         schema:
           type: string
         description: Filter by the reference number of a mandate included in the statement
@@ -1110,94 +1111,8 @@ paths:
                         payout:
                           value: '437.92'
                           currency: EUR
-                      mandate_details:
-                      - reference_number: ABC-123456
-                        mandate:
-                          href: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/
-                          id: 5600672e-2bfa-488c-b23a-460c1dd1f833
-                          reference_number: ABC-123456
-                        closing:
-                          closing_date: '2023-07-11'
-                          closing_code: IN001
-                          closing_description: Claim fully collected
-                          closing_type: positive
-                          accepted_main_claim_amount:
-                            value: '500.00'
-                            currency: EUR
-                          remaining_main_claim_amount:
-                            value: '89.13'
-                            currency: EUR
-                        third_party_money_entries:
-                        - vat_rate: '19.00'
-                          third_party_money:
-                            vat_rate: '19.00'
-                            total_payments:
-                              value: '500.00'
-                              currency: EUR
-                            payments_to_dca:
-                              total_payments:
-                                value: '327.09'
-                                currency: EUR
-                              allocation_to_fee:
-                                value: '52.92'
-                                currency: EUR
-                              allocation_to_fee_vat:
-                                value: '10.05'
-                                currency: EUR
-                              allocation_to_main_claim:
-                                value: '271.32'
-                                currency: EUR
-                              allocation_to_default_interest:
-                                value: '2.85'
-                                currency: EUR
-                              allocation_to_success_commission:
-                                value: '2.85'
-                                currency: EUR
-                              allocation_to_success_commission_vat:
-                                value: '0.54'
-                                currency: EUR
-                              payout:
-                                value: '260.73'
-                                currency: EUR
-                            payments_to_client:
-                              total_payments:
-                                value: '100.00'
-                                currency: EUR
-                              allocation_to_main_claim:
-                                value: '95.83'
-                                currency: EUR
-                              allocation_to_success_commission:
-                                value: '4.17'
-                                currency: EUR
-                              allocation_to_success_commission_vat:
-                                value: '0.79'
-                                currency: EUR
-                              payout:
-                                value: '95.83'
-                                currency: EUR
-                            extraordinary_payouts_to_client:
-                              total_payments:
-                                value: '72.91'
-                                currency: EUR
-                              allocation_to_main_claim:
-                                value: '72.91'
-                                currency: EUR
-                              payout:
-                                value: '72.91'
-                                currency: EUR
-                        cost_burden_entries:
-                        - vat_rate: '19.00'
-                          cost_burden:
-                            vat_rate: '19.00'
-                            fee:
-                              value: '74.90'
-                              currency: EUR
-                            fee_vat:
-                              value: '14.23'
-                              currency: EUR
-                            total_amount:
-                              value: '89.13'
-                              currency: EUR
+                      mandate_count: 1
+                      mandate_details_href: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/mandate-details/
                       booking_date: '2023-07-15'
                       period_start: '2023-06-01'
                       period_end: '2023-06-30'
@@ -1213,7 +1128,10 @@ paths:
   /v1/statements/{id}/:
     get:
       operationId: get-statement
-      description: Retrieve a single statement (invoice) by its ID.
+      description: |-
+        Retrieve a single statement by its ID.
+
+        **Important:** This view contains all statement information **except for mandate details**. To access mandate details of a statement, use the separate list mandate details endpoint.
       summary: Retrieve a statement
       parameters:
       - in: path
@@ -1331,94 +1249,8 @@ paths:
                       payout:
                         value: '437.92'
                         currency: EUR
-                    mandate_details:
-                    - reference_number: ABC-123456
-                      mandate:
-                        href: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/
-                        id: 5600672e-2bfa-488c-b23a-460c1dd1f833
-                        reference_number: ABC-123456
-                      closing:
-                        closing_date: '2023-07-11'
-                        closing_code: IN001
-                        closing_description: Claim fully collected
-                        closing_type: positive
-                        accepted_main_claim_amount:
-                          value: '500.00'
-                          currency: EUR
-                        remaining_main_claim_amount:
-                          value: '89.13'
-                          currency: EUR
-                      third_party_money_entries:
-                      - vat_rate: '19.00'
-                        third_party_money:
-                          vat_rate: '19.00'
-                          total_payments:
-                            value: '500.00'
-                            currency: EUR
-                          payments_to_dca:
-                            total_payments:
-                              value: '327.09'
-                              currency: EUR
-                            allocation_to_fee:
-                              value: '52.92'
-                              currency: EUR
-                            allocation_to_fee_vat:
-                              value: '10.05'
-                              currency: EUR
-                            allocation_to_main_claim:
-                              value: '271.32'
-                              currency: EUR
-                            allocation_to_default_interest:
-                              value: '2.85'
-                              currency: EUR
-                            allocation_to_success_commission:
-                              value: '2.85'
-                              currency: EUR
-                            allocation_to_success_commission_vat:
-                              value: '0.54'
-                              currency: EUR
-                            payout:
-                              value: '260.73'
-                              currency: EUR
-                          payments_to_client:
-                            total_payments:
-                              value: '100.00'
-                              currency: EUR
-                            allocation_to_main_claim:
-                              value: '95.83'
-                              currency: EUR
-                            allocation_to_success_commission:
-                              value: '4.17'
-                              currency: EUR
-                            allocation_to_success_commission_vat:
-                              value: '0.79'
-                              currency: EUR
-                            payout:
-                              value: '95.83'
-                              currency: EUR
-                          extraordinary_payouts_to_client:
-                            total_payments:
-                              value: '72.91'
-                              currency: EUR
-                            allocation_to_main_claim:
-                              value: '72.91'
-                              currency: EUR
-                            payout:
-                              value: '72.91'
-                              currency: EUR
-                      cost_burden_entries:
-                      - vat_rate: '19.00'
-                        cost_burden:
-                          vat_rate: '19.00'
-                          fee:
-                            value: '74.90'
-                            currency: EUR
-                          fee_vat:
-                            value: '14.23'
-                            currency: EUR
-                          total_amount:
-                            value: '89.13'
-                            currency: EUR
+                    mandate_count: 1
+                    mandate_details_href: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/mandate-details/
                     booking_date: '2023-07-15'
                     period_start: '2023-06-01'
                     period_end: '2023-06-30'
@@ -1430,6 +1262,246 @@ paths:
                       cost_burden: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/cost-burden/
                       closing: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/download/closing/
                     created: '2023-07-15T10:23:45.678901Z'
+          description: ''
+  /v1/statements/{statement_id}/mandate-details/:
+    get:
+      operationId: list-statement-mandate-details
+      description: List and filter mandate details belonging to a specific statement.
+      summary: List mandate details for statement
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: reference_number
+        schema:
+          type: string
+        description: Filter for mandate details that match our case reference number.
+        examples:
+          FilterByOurCaseReferenceNumber:
+            value: K25-xxxxx
+            summary: Filter by our case reference number
+      - in: path
+        name: statement_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: query
+        name: your_reference
+        schema:
+          type: string
+        description: Filter by your claim reference (usually your invoice number or
+          contract reference number)
+        examples:
+          FilterByYourClaimReference:
+            value: INV-0002607
+            summary: Filter by your claim reference
+      tags:
+      - statements
+      security:
+      - tokenAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMandateDetailList'
+              examples:
+                Example:
+                  value:
+                    count: 123
+                    next: http://api.example.org/accounts/?offset=400&limit=100
+                    previous: http://api.example.org/accounts/?offset=200&limit=100
+                    results:
+                    - count: 3
+                      next: https://api.paywise.de/v1/statements/b12e4567-e89b-12d3-a456-426614174000/mandate-details/?limit=10&offset=10
+                      previous: null
+                      results:
+                      - reference_number: K25-ABC123
+                        mandate:
+                          href: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/
+                          id: 5600672e-2bfa-488c-b23a-460c1dd1f833
+                          reference_number: K25-ABC123
+                        closing:
+                          closing_date: '2023-07-11'
+                          closing_code: IN001
+                          closing_description: Claim fully collected
+                          closing_type: positive
+                          accepted_main_claim_amount:
+                            value: '500.00'
+                            currency: EUR
+                          remaining_main_claim_amount:
+                            value: '89.13'
+                            currency: EUR
+                        third_party_money_entries:
+                        - vat_rate: '19.00'
+                          third_party_money:
+                            vat_rate: '19.00'
+                            total_payments:
+                              value: '500.00'
+                              currency: EUR
+                            payments_to_dca:
+                              total_payments:
+                                value: '327.09'
+                                currency: EUR
+                              allocation_to_fee:
+                                value: '52.92'
+                                currency: EUR
+                              allocation_to_fee_vat:
+                                value: '10.05'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '271.32'
+                                currency: EUR
+                              allocation_to_default_interest:
+                                value: '2.85'
+                                currency: EUR
+                              allocation_to_success_commission:
+                                value: '2.85'
+                                currency: EUR
+                              allocation_to_success_commission_vat:
+                                value: '0.54'
+                                currency: EUR
+                              payout:
+                                value: '260.73'
+                                currency: EUR
+                            payments_to_client:
+                              total_payments:
+                                value: '100.00'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '95.83'
+                                currency: EUR
+                              allocation_to_success_commission:
+                                value: '4.17'
+                                currency: EUR
+                              allocation_to_success_commission_vat:
+                                value: '0.79'
+                                currency: EUR
+                              payout:
+                                value: '95.83'
+                                currency: EUR
+                            extraordinary_payouts_to_client:
+                              total_payments:
+                                value: '72.91'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '72.91'
+                                currency: EUR
+                              payout:
+                                value: '72.91'
+                                currency: EUR
+                        cost_burden_entries:
+                        - vat_rate: '19.00'
+                          cost_burden:
+                            vat_rate: '19.00'
+                            fee:
+                              value: '74.90'
+                              currency: EUR
+                            fee_vat:
+                              value: '14.23'
+                              currency: EUR
+                            total_amount:
+                              value: '89.13'
+                              currency: EUR
+                      - reference_number: K25-DEF456
+                        mandate:
+                          href: https://api.paywise.de/v1/mandates/7711783f-3cdb-5599-c34b-561c2ee2g944/
+                          id: 7711783f-3cdb-5599-c34b-561c2ee2g944
+                          reference_number: K25-DEF456
+                        closing:
+                          closing_date: '2023-07-10'
+                          closing_code: IN002
+                          closing_description: Partial payment received
+                          closing_type: positive
+                          accepted_main_claim_amount:
+                            value: '300.00'
+                            currency: EUR
+                          remaining_main_claim_amount:
+                            value: '50.00'
+                            currency: EUR
+                        third_party_money_entries:
+                        - vat_rate: '19.00'
+                          third_party_money:
+                            vat_rate: '19.00'
+                            total_payments:
+                              value: '250.00'
+                              currency: EUR
+                            payments_to_dca:
+                              total_payments:
+                                value: '150.00'
+                                currency: EUR
+                              allocation_to_fee:
+                                value: '30.00'
+                                currency: EUR
+                              allocation_to_fee_vat:
+                                value: '5.70'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '114.30'
+                                currency: EUR
+                              allocation_to_default_interest:
+                                value: '0.00'
+                                currency: EUR
+                              allocation_to_success_commission:
+                                value: '0.00'
+                                currency: EUR
+                              allocation_to_success_commission_vat:
+                                value: '0.00'
+                                currency: EUR
+                              payout:
+                                value: '114.30'
+                                currency: EUR
+                            payments_to_client:
+                              total_payments:
+                                value: '100.00'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '97.50'
+                                currency: EUR
+                              allocation_to_success_commission:
+                                value: '2.50'
+                                currency: EUR
+                              allocation_to_success_commission_vat:
+                                value: '0.00'
+                                currency: EUR
+                              payout:
+                                value: '97.50'
+                                currency: EUR
+                            extraordinary_payouts_to_client:
+                              total_payments:
+                                value: '0.00'
+                                currency: EUR
+                              allocation_to_main_claim:
+                                value: '0.00'
+                                currency: EUR
+                              payout:
+                                value: '0.00'
+                                currency: EUR
+                        cost_burden_entries:
+                        - vat_rate: '19.00'
+                          cost_burden:
+                            vat_rate: '19.00'
+                            fee:
+                              value: '35.70'
+                              currency: EUR
+                            fee_vat:
+                              value: '6.78'
+                              currency: EUR
+                            total_amount:
+                              value: '42.48'
+                              currency: EUR
           description: ''
 components:
   schemas:
@@ -4119,9 +4191,9 @@ components:
       - processing_state
       - status_updates
       - total_mandate_amount
-    MandateDetailMin:
+    MandateDetail:
       type: object
-      description: Serializer for minimal mandate detail information
+      description: Serializer for mandate detail information
       properties:
         reference_number:
           type: string
@@ -4248,6 +4320,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Debtor'
+    PaginatedMandateDetailList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MandateDetail'
     PaginatedMandateList:
       type: object
       properties:
@@ -4542,7 +4634,9 @@ components:
         * `judicial` - Gleich Mahnbescheid beantragen
     Statement:
       type: object
-      description: A statement (invoice) for debt collection services
+      description: |-
+        Statement serializer with essential information including VAT details.
+        Optimized for performance by excluding heavy mandate details which are accessible via separate endpoint.
       properties:
         href:
           type: string
@@ -4597,18 +4691,20 @@ components:
           - $ref: '#/components/schemas/Amount'
           readOnly: true
           description: Amount of outstanding items that was offset.
+        mandate_count:
+          type: integer
+          readOnly: true
+          description: Number of mandates included in this statement.
+        mandate_details_href:
+          type: string
+          readOnly: true
+          description: URL to access paginated mandate details for this statement.
         overview_vat_specific:
           type: array
           items:
             $ref: '#/components/schemas/StatementVATEntry'
           readOnly: true
           description: VAT-specific financial details for this statement.
-        mandate_details:
-          type: array
-          items:
-            $ref: '#/components/schemas/MandateDetailMin'
-          readOnly: true
-          description: Details about the mandates included in this statement.
         downloads:
           type: string
           readOnly: true
@@ -4628,7 +4724,8 @@ components:
       - downloads
       - href
       - invoice_no
-      - mandate_details
+      - mandate_count
+      - mandate_details_href
       - offset_outstanding_items
       - overview_vat_specific
       - period_end
