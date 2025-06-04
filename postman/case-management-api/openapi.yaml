@@ -4,7 +4,7 @@ info:
   version: v1
   description: |2
 
-    Use our API to create and manage companies & users.
+    Use our Case Management API to perform the debt entire collection process.
 
     Please refer to the [official docs][ref1] for more!
 
@@ -838,6 +838,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StatusUpdates'
+              examples:
+                StatusUpdateWithDownloadsExample:
+                  value:
+                    id: 095be615-a8ad-4c33-8e9c-c7612fbf6c9f
+                    title: Erste Zahlungsaufforderung
+                    description: <p>Wir haben Ihrem Schuldner unsere erste Zahlungsaufforderung
+                      gesendet.</p>
+                    legal_stage: dunning
+                    processing_state: open
+                    created: '2023-07-15T10:23:45.678901Z'
+                    downloads:
+                    - id: a1b2c3d4-e5f6-7890-1234-567890abcdef
+                      filename: zahlungsaufforderung.pdf
+                      mime_type: application/pdf
+                      file_size: 145632
+                      download_url: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/statusupdates/095be615-a8ad-4c33-8e9c-c7612fbf6c9f/download/a1b2c3d4-e5f6-7890-1234-567890abcdef/
+                    - id: f6e5d4c3-b2a1-9876-5432-1abcdef67890
+                      filename: einschreiben_nachweis.jpg
+                      mime_type: image/jpeg
+                      file_size: 89421
+                      download_url: https://api.paywise.de/v1/mandates/5600672e-2bfa-488c-b23a-460c1dd1f833/statusupdates/095be615-a8ad-4c33-8e9c-c7612fbf6c9f/download/f6e5d4c3-b2a1-9876-5432-1abcdef67890/
+                  summary: Status Update with Downloads Example
+                  description: Example of a status update object with file downloads
           description: ''
   /v1/payments/:
     get:
@@ -4971,8 +4994,41 @@ components:
       - taxable_expenses_claims
       - taxable_expenses_vat_claims
       - taxfree_expenses_claims
+    StatusUpdateDownload:
+      type: object
+      description: |-
+        Serializer for individual download objects in status updates.
+        Used for schema generation and documentation.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique UUID identifier of the file attachment
+        filename:
+          type: string
+          description: Original filename of the attachment
+        mime_type:
+          type: string
+          description: MIME type of the file (e.g., application/pdf, image/jpeg)
+        file_size:
+          type: integer
+          nullable: true
+          description: File size in bytes
+        download_url:
+          type: string
+          format: uri
+          description: Secure download URL for the file
+      required:
+      - download_url
+      - file_size
+      - filename
+      - id
+      - mime_type
     StatusUpdates:
       type: object
+      description: |-
+        Mixin to provide download URLs for status update file attachments.
+        Reusable across different status update serializers.
       properties:
         id:
           type: string
@@ -4996,9 +5052,16 @@ components:
           type: string
           format: date-time
           readOnly: true
+        downloads:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusUpdateDownload'
+          readOnly: true
+          description: List of file attachments with metadata and download URLs.
       required:
       - created
       - description
+      - downloads
       - legal_stage
       - processing_state
       - title
