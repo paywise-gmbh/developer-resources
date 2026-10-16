@@ -1,0 +1,60 @@
+# yaml-language-server: $schema=https://schema.buildwithfern.dev/generators-yml.json
+# One SDK per language covering both public APIs; each spec gets its own
+# namespace (client.case_management.* / client.partner.*).
+api:
+  specs:
+    - openapi: ../openapi/case-management-api.json
+      overrides: ./overrides/case-management.yml
+      namespace: case_management
+    - openapi: ../openapi/partner-api.json
+      overrides: ./overrides/partner.yml
+      namespace: partner
+default-group: local
+groups:
+  local:
+    generators:
+      - name: fernapi/fern-typescript-sdk
+        version: 3.107.2
+        output:
+          location: local-file-system
+          path: ../sdks/typescript
+        config:
+          namespaceExport: Paywise
+      - name: fernapi/fern-python-sdk
+        version: 5.41.2
+        output:
+          location: local-file-system
+          path: ../sdks/python
+        config:
+          package_name: paywise
+          client_class_name: Paywise
+  # Generates into the public SDK repositories via the Fern GitHub app and
+  # opens a PR there; merging + tagging a release publishes via OIDC
+  # (npm/PyPI trusted publishing, no long-lived tokens).
+  publish:
+    generators:
+      - name: fernapi/fern-typescript-sdk
+        version: 3.107.2
+        output:
+          location: npm
+          package-name: "@paywise/sdk"
+          token: OIDC
+        github:
+          repository: paywise-gmbh/paywise-typescript
+          mode: pull-request
+          license: MIT
+        config:
+          namespaceExport: Paywise
+      - name: fernapi/fern-python-sdk
+        version: 5.41.2
+        output:
+          location: pypi
+          package-name: paywise
+          token: OIDC
+        github:
+          repository: paywise-gmbh/paywise-python
+          mode: pull-request
+          license: MIT
+        config:
+          package_name: paywise
+          client_class_name: Paywise
