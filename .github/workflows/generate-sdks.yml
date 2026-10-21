@@ -1,0 +1,28 @@
+name: Generate SDKs
+
+# Manual only: opens regeneration PRs in paywise-typescript / paywise-python.
+# Never runs on pull requests, so fork PRs can't reach FERN_TOKEN.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check overrides are up to date
+        run: |
+          python3 scripts/build_fern_overrides.py
+          git diff --exit-code -- fern/overrides
+      - name: Validate definition
+        run: npx -y fern-api@$(jq -r .version fern/fern.config.json) check
+      - name: Generate (opens PRs in the SDK repositories)
+        env:
+          FERN_TOKEN: ${{ secrets.FERN_TOKEN }}
+        run: npx -y fern-api@$(jq -r .version fern/fern.config.json) generate --group publish --log-level debug

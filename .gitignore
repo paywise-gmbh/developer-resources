@@ -1,0 +1,6 @@
+# Fern
+**/.preview
+**/.definition
+# Local spike output; generated SDKs live in their own repositories
+sdks/
+.npm-placeholder/
