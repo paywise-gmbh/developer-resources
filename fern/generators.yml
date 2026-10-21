@@ -9,6 +9,10 @@ api:
     - openapi: ../openapi/partner-api.json
       overrides: ./overrides/partner.yml
       namespace: partner
+readme:
+  apiName: paywise
+  apiReferenceLink: https://docs.paywise.de
+  introduction: Official client for the paywise Case Management API v2 and Partner API v2.
 default-group: local
 groups:
   local:
